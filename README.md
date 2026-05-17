@@ -48,31 +48,61 @@ Create beautiful markdown-based presentations with [reveal.js](https://revealjs.
 3. Use `---` to separate slides
 4. Click the presentation icon or use `Cmd/Ctrl+P` → "Open slide preview"
 
-## Templates
+## Templates (36 Total)
 
-Access 36+ templates via Command Palette → "Insert slide template":
+Access via Command Palette → "Insert slide template":
 
-### Layouts
+### Layout (5)
 - Text + Image (1/3 + 2/3)
-- 2/3 Columns
+- Image Overlay Bottom
+- 2 Columns / 3 Columns
 - Grid 2x2
-- Section Headers
+- Timeline
 
-### Data & Charts
-- Tables
+### Structure (3)
+- Section Header
+- Call to Action
+- Thank You
+
+### Data (4)
+- Table
 - Stats Cards
 - KPI Dashboard
-- Comparison Tables
+- Comparison Table
 
-### Mermaid Diagrams
-- Flowcharts
-- Sequence Diagrams
-- Mind Maps
-- Timelines
-- Gantt Charts
-- Pie Charts
-- Quadrant Charts
-- And more...
+### Content (4)
+- Fragment List
+- Quote
+- Checklist
+- Code Highlight
+
+### Comparison (2)
+- Before/After
+- Pros/Cons
+
+### Interactive (1)
+- Quiz
+
+### Media (2)
+- Video Background
+- Iframe Embed
+
+### Trading (1)
+- Key Levels
+
+### Mermaid Diagrams (12)
+- Flowchart
+- Mindmap
+- Sequence Diagram
+- Timeline
+- Gantt Chart
+- Pie Chart
+- User Journey
+- Quadrant Chart
+- ER Diagram
+- State Diagram
+- Class Diagram
+- Git Graph
 
 ## Slide Syntax
 
