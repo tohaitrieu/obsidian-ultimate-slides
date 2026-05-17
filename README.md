@@ -17,9 +17,28 @@ Create beautiful markdown-based presentations with [reveal.js](https://revealjs.
 ## What's New in Ultimate Slides
 
 - **Template Inserter** - Command palette (`Cmd/Ctrl+P` → "Insert slide template") with visual preview
+- **Markdown Layout Directives** - Use `columns-2`, `columns-3`, `timeline`, `grid-2x2` for easy layouts
 - **Fixed Mermaid Rendering** - Diagrams now render at full size
 - **Bundled Assets** - No external downloads required
 - **Simplified Setup** - Works out of the box
+
+### Template Inserter
+
+Click the template icon in the ribbon or use Command Palette to insert templates:
+
+![Template Inserter Icon](imgs/insert-templates-icon.png)
+
+### 36 Built-in Templates
+
+Browse and insert from layout, data, content, and Mermaid diagram templates:
+
+![Slide Template Dialog](imgs/slide-template.png)
+
+### Mermaid Diagrams
+
+12 Mermaid diagram templates with proper sizing and dark theme:
+
+![Mermaid Templates](imgs/mermail-slide-templates.png)
 
 ## Installation
 
@@ -132,6 +151,27 @@ Left content
 Right content
 </split>
 ```
+
+### Layout Directives (NEW)
+
+Use simple markdown directives instead of HTML:
+
+```markdown
+columns-3
+### Column 1
+First column content
+
+### Column 2
+Second column content
+
+### Column 3
+Third column content
+```
+
+Supported directives:
+- `columns-2`, `columns-3`, `columns-4` - Multi-column layouts
+- `timeline` - Horizontal timeline view
+- `grid-2x2` - 2×2 grid layout
 
 ### Fragments (Animations)
 ```markdown
