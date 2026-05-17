@@ -1,7 +1,6 @@
 import {
     existsSync,
     mkdirSync,
-    readFileSync,
     renameSync,
     rmSync,
     writeFileSync,

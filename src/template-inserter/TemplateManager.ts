@@ -329,15 +329,14 @@ export class TemplateManager {
     }
 
     getAllTemplates(): SlideTemplate[] {
-        const all: SlideTemplate[] = [];
-        this.builtInTemplates.forEach((t) => all.push(t));
-        this.userTemplates.forEach((t) => all.push(t));
-        return all;
+        return [...this.builtInTemplates, ...this.userTemplates];
     }
 
     getCategories(): string[] {
         const categories = new Set<string>();
-        this.getAllTemplates().forEach((t) => categories.add(t.category));
+        for (const t of this.getAllTemplates()) {
+            categories.add(t.category);
+        }
         return Array.from(categories);
     }
 

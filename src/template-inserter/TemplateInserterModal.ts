@@ -49,9 +49,9 @@ export class TemplateInserterModal extends Modal {
             });
             tab.addEventListener("click", () => {
                 this.selectedCategory = category;
-                tabsContainer
-                    .querySelectorAll(".us-tab")
-                    .forEach((t) => t.removeClass("us-tab-active"));
+                for (const t of tabsContainer.querySelectorAll(".us-tab")) {
+                    t.removeClass("us-tab-active");
+                }
                 tab.addClass("us-tab-active");
                 this.renderTemplates(templateGrid);
             });
@@ -316,7 +316,7 @@ export class TemplateInserterModal extends Modal {
 
     private insertTemplate(template: SlideTemplate) {
         const cursor = this.editor.getCursor();
-        this.editor.replaceRange(template.content + "\n", cursor);
+        this.editor.replaceRange(`${template.content}\n`, cursor);
         this.close();
     }
 
