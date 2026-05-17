@@ -1,13 +1,12 @@
 {
-    "name": "slides-extended",
-    "version": "2.3.5",
-    "description": "Create markdown-based presentations with reveal.js in Obsidian",
-    "author": "Erin Schnabel",
+    "name": "ultimate-slides",
+    "version": "1.0.0",
+    "description": "Create markdown-based presentations with reveal.js and 24+ built-in slide templates",
+    "author": "To Trieu (forked from Slides Extended)",
     "license": "MIT",
-    "homepage": "https://github.com/ebullient",
+    "homepage": "https://github.com/totrieu/obsidian-ultimate-slides",
     "main": "src/main.ts",
     "scripts": {
-        "preinstall": "npx only-allow pnpm",
         "dev": "node esbuild.config.mjs",
         "prebuild": "pnpm exec biome check ./src",
         "build": "node esbuild.config.mjs production",

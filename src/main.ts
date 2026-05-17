@@ -1,3 +1,3 @@
-import { SlidesExtendedPlugin } from "./slidesExtended-Plugin";
+import { UltimateSlidesPlugin } from "./ultimateSlides-Plugin";
 
-export default SlidesExtendedPlugin;
+export default UltimateSlidesPlugin;

@@ -7,12 +7,12 @@ import {
     type EditorSuggestTriggerInfo,
     type TFile,
 } from "obsidian";
-import type { SlidesExtendedPlugin } from "../../slidesExtended-Plugin";
+import type { UltimateSlidesPlugin } from "../../ultimateSlides-Plugin";
 
 export class LineSelectionListener extends EditorSuggest<string> {
-    private plugin: SlidesExtendedPlugin;
+    private plugin: UltimateSlidesPlugin;
 
-    constructor(app: App, plugin: SlidesExtendedPlugin) {
+    constructor(app: App, plugin: UltimateSlidesPlugin) {
         super(app);
         this.plugin = plugin;
     }

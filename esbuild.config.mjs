@@ -215,7 +215,14 @@ const parameters = {
         }),
         copy({
             assets: {
-                from: ['node_modules/reveal.js-mermaid-plugin/plugin/mermaid/*'],
+                from: ['node_modules/reveal.js-mermaid-plugin/plugin/mermaid/mermaid.js',
+                       'node_modules/reveal.js-mermaid-plugin/plugin/mermaid/mermaid.esm.js'],
+                to: ['./plugin/mermaid/'],
+            }
+        }),
+        copy({
+            assets: {
+                from: ['src/plugin/mermaid/plugin.js'],
                 to: ['./plugin/mermaid/'],
             }
         }),

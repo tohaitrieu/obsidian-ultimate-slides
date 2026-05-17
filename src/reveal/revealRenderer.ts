@@ -9,7 +9,7 @@ import {
     getMediaCollector,
     type ObsidianUtils,
 } from "../obsidian/obsidianUtils";
-import { DEFAULTS } from "../slidesExtended-constants";
+import { DEFAULTS } from "../ultimateSlides-constants";
 import { has, isEmpty } from "../util";
 import { YamlParser } from "../yaml/yamlParser";
 import { md } from "./markdown";

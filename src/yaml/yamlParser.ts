@@ -1,7 +1,7 @@
 import { loadFront } from "yaml-front-matter";
 
 import type { Options, SlidesExtendedSettings } from "../@types";
-import { DEFAULTS } from "../slidesExtended-constants";
+import { DEFAULTS } from "../ultimateSlides-constants";
 import { isEmpty, isNil, omit, omitBy, pick } from "../util";
 
 export class YamlParser {

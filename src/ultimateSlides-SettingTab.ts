@@ -6,22 +6,22 @@ import {
     TFolder,
 } from "obsidian";
 import { FolderInputSuggest } from "obsidian-utilities";
-import type { SlidesExtendedSettings } from "./@types";
+import type { UltimateSlidesSettings } from "./@types";
 import {
     getThemeFiles,
     ThemeInputSuggest,
 } from "./obsidian/suggesters/ThemeSuggester";
-import type { SlidesExtendedPlugin } from "./slidesExtended-Plugin";
+import type { UltimateSlidesPlugin } from "./ultimateSlides-Plugin";
 
 /** This is because TypeScript's filters are dumb. */
 function isFolder(file: TAbstractFile): file is TFolder {
     return file instanceof TFolder;
 }
-export class SlidesExtendedSettingTab extends PluginSettingTab {
-    plugin: SlidesExtendedPlugin;
-    newSettings: SlidesExtendedSettings;
+export class UltimateSlidesSettingTab extends PluginSettingTab {
+    plugin: UltimateSlidesPlugin;
+    newSettings: UltimateSlidesSettings;
 
-    constructor(app: App, plugin: SlidesExtendedPlugin) {
+    constructor(app: App, plugin: UltimateSlidesPlugin) {
         super(app, plugin);
         this.plugin = plugin;
     }
@@ -137,7 +137,7 @@ export class SlidesExtendedSettingTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName("Export directory")
             .setDesc(
-                "Specify the directory where Slides Extended should export presentations.",
+                "Specify the directory where Ultimate Slides should export presentations.",
             )
             .addSearch((cb) => {
                 const folders: TFolder[] = this.app.vault

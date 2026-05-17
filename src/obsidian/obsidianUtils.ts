@@ -12,7 +12,7 @@ import type {
     Options,
     SlidesExtendedSettings,
 } from "../@types";
-import { DISABLED_IMAGE_COLLECTOR } from "../slidesExtended-constants";
+import { DISABLED_IMAGE_COLLECTOR } from "../ultimateSlides-constants";
 import { MarkdownProcessor } from "./markdownProcessor";
 
 let instance: MediaCollector = DISABLED_IMAGE_COLLECTOR;
@@ -111,7 +111,7 @@ export class ObsidianUtils implements MediaCollector {
         this.pluginDir = path.join(
             this.vaultDir,
             this.app.vault.configDir,
-            "plugins/slides-extended/",
+            "plugins/ultimate-slides/",
         );
         this.distDir = path.join(this.pluginDir, "dist/");
         this.exportDir = path.join(

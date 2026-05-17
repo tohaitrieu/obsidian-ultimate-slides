@@ -1,10 +1,11 @@
 {
-  "id": "slides-extended",
-  "name": "Slides Extended",
-  "version": "2.3.5",
+  "id": "ultimate-slides",
+  "name": "Ultimate Slides",
+  "version": "1.0.0",
   "minAppVersion": "1.10.0",
-  "description": "Create markdown-based presentations using reveal.js.",
-  "author": "Matthäus Szturc, continued by Erin Schnabel",
-  "authorUrl": "https://github.com/ebullient",
+  "description": "Create markdown-based presentations with reveal.js. 36+ templates, Mermaid diagrams, live preview, and more.",
+  "author": "To Trieu",
+  "authorUrl": "https://github.com/totrieu",
+  "fundingUrl": "https://github.com/sponsors/totrieu",
   "isDesktopOnly": true
 }

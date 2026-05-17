@@ -38,6 +38,10 @@ export interface SlidesExtendedSettings {
     verticalSeparator: string;
 }
 
+export interface UltimateSlidesSettings extends SlidesExtendedSettings {
+    userTemplatesFolder: string;
+}
+
 export type ChartJsOptions = {
     // biome-ignore lint/suspicious/noExplicitAny: minimal adaptation to Chart.js types
     elements?: any;

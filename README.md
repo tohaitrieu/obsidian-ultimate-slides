@@ -1,69 +1,147 @@
-# Slides Extended (for Obsidian)
+# Ultimate Slides for Obsidian
 
-![GitHub all releases](https://img.shields.io/github/downloads/ebullient/obsidian-slides-extended/total?color=success)
+Create beautiful markdown-based presentations with [reveal.js](https://revealjs.com/) directly in Obsidian.
 
-🚧 Fork in progress, there will be some dust 🚧
-
-Docs, especially, are pretty borked. ;)
-
-<img src="https://raw.githubusercontent.com/ebullient/obsidian-slides-extended/main/imgs/demo.gif" alt="demo">
-
-Slides Extended is the perfect slide deck extension for [Obsidian](https://obsidian.md)
+> Forked from [Slides Extended](https://github.com/ebullient/obsidian-slides-extended) by Erin Schnabel
 
 ## Features
 
-- Embed your notes into your slides
-- Live Preview while editing your slides
-- Themes allow you to change the appearance of your slides
-- Annotations allow you to change the style of your slides
-- Export slides as PDF Documents or as HTML Presentations
-- **Support for most of the Obsidian Markdown Syntax**
+- **Live Preview** - See changes instantly while editing
+- **36+ Built-in Templates** - Quick-insert slide layouts, data visualizations, and Mermaid diagrams
+- **Mermaid Diagrams** - Full support for flowcharts, sequence diagrams, mind maps, timelines, and more
+- **Rich Layouts** - Grid system, split views, columns, and responsive designs
+- **Themes** - Multiple reveal.js themes included
+- **Export** - PDF and standalone HTML export
+- **Full Obsidian Syntax** - Links, embeds, callouts, and more
+
+## What's New in Ultimate Slides
+
+- **Template Inserter** - Command palette (`Cmd/Ctrl+P` → "Insert slide template") with visual preview
+- **Fixed Mermaid Rendering** - Diagrams now render at full size
+- **Bundled Assets** - No external downloads required
+- **Simplified Setup** - Works out of the box
 
 ## Installation
 
-Slides Extended is an official community plugin. Here's how you can install it:
+### From Community Plugins (Coming Soon)
 
-1. Open Obsidian and go to `Settings`.
-2. Click on `Community Plugins`.
-3. Make sure "Safe Mode" is turned off.
-4. Click on `Browse`.
-5. Search for `Slides Extended`.
-6. Click `Install` on the `Slides Extended` plugin.
-7. After installation, make sure to enable the plugin by toggling it on in the `Installed Plugins` section.
+1. Open Obsidian Settings → Community Plugins
+2. Search for "Ultimate Slides"
+3. Install and enable
 
 ### Manual Installation
 
-1. Download the latest release from [GitHub](https://github.com/ebullient/obsidian-slides-extended/releases).
-   You need the files: `manifest.json`, `main.js`, `style.css` and `slides-extended.zip`.
-2. In Obsidian, open your vault's root folder in your file explorer.
-3. Navigate to the `.obsidian/plugins` directory. If it doesn't exist, create it.
-4. Extract the contents of the downloaded `.zip` file into a new folder within the `plugins` directory.
-5. Copy the file `manifest.json`, `main.js`, and `style.css` into the folder `slides-extended`.
-5. Restart Obsidian or reload your vault.
-6. Go to `Settings` > `Community Plugins` and make sure "Safe Mode" is turned off.
-7. Click on `Browse` under `Community Plugins`, find `Obsidian Slides Extended`, and enable it.
+1. Download the latest release from [Releases](https://github.com/totrieu/obsidian-ultimate-slides/releases)
+2. Extract to `.obsidian/plugins/ultimate-slides/`
+3. Restart Obsidian and enable the plugin
 
-> [!NOTE]
-> The plugin folder is named `slides-extended` and contains the `.zip`-contents, like `css`, `dist`, `plugin`, `template`,
-> but also the additional files `mainfest.json`, `main.js`, and `style.css`.
+## Quick Start
 
+1. Create a new markdown file
+2. Add frontmatter:
+   ```yaml
+   ---
+   theme: black
+   transition: fade
+   ---
+   ```
+3. Use `---` to separate slides
+4. Click the presentation icon or use `Cmd/Ctrl+P` → "Open slide preview"
 
-### Installation Using BRAT
+## Templates
 
-If you prefer to use BRAT for plugin management:
+Access 36+ templates via Command Palette → "Insert slide template":
 
-1. Ensure you have BRAT installed. If not, follow the [BRAT installation guide](https://github.com/TfTHacker/obsidian42-brat#readme).
-2. In Obsidian, open the command palette (`Ctrl/Cmd + P`) and search for "BRAT: Add a Beta Plugin".
-3. Enter `ebullient/obsidian-slides-extended` as the GitHub repository.
-4. BRAT will handle the installation. Once complete, restart or reload your vault for changes to take effect.
+### Layouts
+- Text + Image (1/3 + 2/3)
+- 2/3 Columns
+- Grid 2x2
+- Section Headers
 
-## Acknowledgements
+### Data & Charts
+- Tables
+- Stats Cards
+- KPI Dashboard
+- Comparison Tables
 
-Matthäus worked on this plugin for a long time, and [announced that he was discontinuing](https://forum.obsidian.md/t/discontinued-advanced-slides-create-markdown-based-reveal-js-presentations-in-obsidian/28243) the plugin on the forum.
+### Mermaid Diagrams
+- Flowcharts
+- Sequence Diagrams
+- Mind Maps
+- Timelines
+- Gantt Charts
+- Pie Charts
+- Quadrant Charts
+- And more...
 
-This plugin was a huge undertaking. I'm just picking up where Matthäus left off.
+## Slide Syntax
 
+### Basic Slide
+```markdown
 ---
 
-- MIT licensed | Copyright © 2024 Erin Schnabel
-- MIT licensed | Copyright © 2021 Matthäus Szturc
+## Slide Title
+
+Content here
+
+---
+```
+
+### Grid Layout
+```markdown
+<grid drag="50 80" drop="5 10">
+Content in a positioned box
+</grid>
+```
+
+### Split View
+```markdown
+<split even>
+Left content
++++
+Right content
+</split>
+```
+
+### Fragments (Animations)
+```markdown
+<!-- element class="fragment" -->
+This appears on click
+```
+
+### Speaker Notes
+```markdown
+note: These are speaker notes
+```
+
+## Themes
+
+Available themes: `black`, `white`, `league`, `beige`, `sky`, `night`, `serif`, `simple`, `solarized`, `blood`, `moon`
+
+```yaml
+---
+theme: black
+highlightTheme: zenburn
+---
+```
+
+## Configuration
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `theme` | `black` | Slide theme |
+| `transition` | `slide` | Transition effect |
+| `width` | `960` | Slide width |
+| `height` | `700` | Slide height |
+| `controls` | `true` | Show navigation controls |
+| `progress` | `true` | Show progress bar |
+
+## Credits
+
+- Original [Slides Extended](https://github.com/ebullient/obsidian-slides-extended) by Erin Schnabel
+- Based on [Advanced Slides](https://github.com/MSzturc/obsidian-advanced-slides) by MSzturc
+- Powered by [reveal.js](https://revealjs.com/)
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details

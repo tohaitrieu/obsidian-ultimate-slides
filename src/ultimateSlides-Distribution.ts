@@ -9,34 +9,41 @@ import {
 import path from "node:path";
 import JSZip from "jszip";
 import { requestUrl } from "obsidian";
-import type { SlidesExtendedPlugin } from "./slidesExtended-Plugin";
+import type { UltimateSlidesPlugin } from "./ultimateSlides-Plugin";
 
-export class SlidesExtendedDistribution {
-    plugin: SlidesExtendedPlugin;
+export class UltimateSlidesDistribution {
+    plugin: UltimateSlidesPlugin;
     pluginDirectory: string;
     distDirectory: string;
 
-    constructor(plugin: SlidesExtendedPlugin) {
+    constructor(plugin: UltimateSlidesPlugin) {
         this.plugin = plugin;
         this.pluginDirectory = this.plugin.obsidianUtils.pluginDirectory;
         this.distDirectory = this.plugin.obsidianUtils.distDirectory;
     }
 
     isOutdated(): boolean {
-        return !existsSync(this.distDirectory) || this.isOldVersion();
+        // Ultimate Slides bundles everything at build time - never outdated
+        return false;
     }
 
     isOldVersion(): boolean {
-        const versionFile = path.join(this.pluginDirectory, "distVersion.json");
-        if (!existsSync(versionFile)) {
-            return true;
-        }
-        const rawdata = readFileSync(versionFile, { encoding: "utf-8" });
-        const distVersion = JSON.parse(rawdata).version;
-        return distVersion !== this.plugin.manifest.version;
+        // Always return false - we don't need version-based updates
+        // Everything is bundled with the plugin
+        return false;
     }
 
     async update() {
+        // Ultimate Slides bundles everything - skip download if dist exists
+        if (existsSync(this.distDirectory)) {
+            const revealJs = path.join(this.distDirectory, "reveal.js");
+            if (existsSync(revealJs)) {
+                console.log("Ultimate Slides: All assets already present, skipping download.");
+                return;
+            }
+        }
+
+        // Fallback: try to download (will likely fail but handles edge cases)
         const version = this.plugin.manifest.version;
         const downloadUrl = `https://github.com/ebullient/obsidian-slides-extended/releases/download/${version}/slides-extended.zip`;
 

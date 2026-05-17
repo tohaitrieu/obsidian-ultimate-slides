@@ -43,9 +43,65 @@ element.style {
     backdrop-filter: unset;
 }
 
-.mermaid {
-    width: 100%;
-    height: auto;
+/* Mermaid diagram - override reveal.js pre constraints */
+.reveal pre:has(.mermaid),
+.reveal pre.mermaid-pre,
+.reveal section pre:has(.mermaid) {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    font-size: 1em !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+}
+
+/* Main mermaid container - full width */
+.reveal .mermaid,
+.reveal section .mermaid {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 60vh !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    overflow: visible !important;
+}
+
+/* CRITICAL: Override Mermaid's inline max-width: 500px */
+.reveal .mermaid > svg,
+.reveal .mermaid svg[id^="mermaid"],
+.reveal section .mermaid > svg,
+.reveal .mermaid svg[style*="max-width"] {
+    max-width: 100% !important;
+    width: 90% !important;
+    height: auto !important;
+}
+
+/* Target SVG with specific inline styles set by Mermaid library */
+.reveal .mermaid svg[style],
+.reveal .mermaid > svg[width="100%"] {
+    max-width: 1600px !important;
+    width: 80% !important;
+}
+
+/* Mermaid in split containers */
+.reveal split .mermaid {
+    flex: 1;
+    min-height: 50vh !important;
+}
+
+.reveal split .mermaid > svg {
+    width: 95% !important;
+    max-width: 100% !important;
+}
+
+/* Full slide mermaid (no split) - maximize */
+.reveal section:not(:has(split)) .mermaid > svg {
+    width: 85% !important;
+    max-width: 1600px !important;
 }
 
 

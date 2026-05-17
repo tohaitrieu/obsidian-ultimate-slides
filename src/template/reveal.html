@@ -8,6 +8,16 @@
     <link rel="stylesheet" href="{{{base}}}dist/reset.css">
     <link rel="stylesheet" href="{{{base}}}dist/reveal.css" />
     <link rel="stylesheet" href="{{{base}}}css/slides-extended.css" />
+    <style>
+        /* Force Mermaid SVG to expand - override inline max-width: 500px */
+        .reveal .mermaid svg,
+        .reveal .mermaid > svg,
+        .reveal section .mermaid svg {
+            max-width: none !important;
+            width: 90% !important;
+            height: auto !important;
+        }
+    </style>
     <link rel="stylesheet" href="{{{base}}}{{{themeUrl}}}" id="theme" />
     <link rel="stylesheet" href="{{{base}}}{{{highlightThemeUrl}}}" />
     {{#enableCustomControls}}
@@ -189,6 +199,7 @@
             transition: 'default', // none/fade/slide/convex/concave/zoom
             plugins: [
                 ObsidianMarkdown,
+                RevealMermaid,
                 RevealHighlight,
                 RevealZoom,
                 RevealNotes,
@@ -198,7 +209,6 @@
                 {{#isMathJax}}
                 RevealMath.MathJax3,
                 {{/isMathJax}}
-                RevealMermaid,
                 RevealChart,
                 {{#enableCustomControls}}
                 RevealCustomControls,
@@ -241,6 +251,33 @@
             },
             mermaid: {
                 theme: isLight(bgColor) ? 'default' : 'dark',
+                flowchart: { useMaxWidth: false },
+                sequence: { useMaxWidth: false },
+                gantt: { useMaxWidth: false },
+                journey: { useMaxWidth: false },
+                timeline: { useMaxWidth: false },
+                mindmap: { useMaxWidth: false },
+                gitGraph: { useMaxWidth: false },
+                c4: { useMaxWidth: false },
+                sankey: { useMaxWidth: false },
+                class: { useMaxWidth: false },
+                state: { useMaxWidth: false },
+                er: { useMaxWidth: false },
+                pie: { useMaxWidth: false },
+                quadrantChart: { useMaxWidth: false },
+                requirement: { useMaxWidth: false },
+            },
+            mermaidPlugin: {
+                afterRender: function(el) {
+                    // Remove max-width constraint from Mermaid SVG
+                    const svg = el.querySelector('svg');
+                    if (svg) {
+                        svg.style.maxWidth = 'none';
+                        svg.style.width = '100%';
+                        svg.removeAttribute('width');
+                        svg.removeAttribute('height');
+                    }
+                }
             },
             {{#enableCustomControls}}
             customcontrols: {
@@ -304,7 +341,37 @@
        * Use manual \tag{} commands: \begin{equation}\tag{1} ... \end{equation}
        */
       
-      Reveal.initialize(options);
+      // Fix Mermaid SVG sizing - runs on any SVG added to .mermaid
+      function fixMermaidSvg(svg) {
+        svg.style.maxWidth = 'none';
+        svg.style.width = '90%';
+        svg.style.height = 'auto';
+        svg.removeAttribute('width');
+        console.log('Fixed mermaid SVG:', svg.id);
+      }
+
+      // Watch for mermaid SVGs being added
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.tagName === 'svg' || node.tagName === 'SVG') {
+              fixMermaidSvg(node);
+            }
+            if (node.querySelectorAll) {
+              node.querySelectorAll('svg').forEach(fixMermaidSvg);
+            }
+          });
+        });
+      });
+
+      document.querySelectorAll('.mermaid').forEach((el) => {
+        observer.observe(el, { childList: true, subtree: true });
+      });
+
+      Reveal.initialize(options).then(() => {
+        // Also fix any existing SVGs
+        document.querySelectorAll('.mermaid svg').forEach(fixMermaidSvg);
+      });
     </script>
     <!-- created with {{! ignore me }}Slides Extended reveal.html template -->
 </body>

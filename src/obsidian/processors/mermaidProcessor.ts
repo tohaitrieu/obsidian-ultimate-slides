@@ -20,7 +20,7 @@ export class MermaidProcessor implements Processor {
         const after = markdown.substring(endIdx + 3);
         const content = markdown.substring(startIdx + 11, endIdx);
 
-        const result = `${before}\n<div class="mermaid">\n${content}\n</div>\n${after}`;
+        const result = `${before}\n<pre class="mermaid">${content}</pre>\n${after}`;
 
         return this.transformMermaid(result);
     }

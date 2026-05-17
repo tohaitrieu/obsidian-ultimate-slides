@@ -1,5 +1,5 @@
-import { addIcon, Plugin, type TAbstractFile } from "obsidian";
-import type { SlidesExtendedSettings } from "./@types";
+import { addIcon, MarkdownView, Plugin, type TAbstractFile } from "obsidian";
+import type { UltimateSlidesSettings } from "./@types";
 import { EmbeddedSlideProcessor } from "./obsidian/embeddedSlideProcessor";
 import { ObsidianUtils } from "./obsidian/obsidianUtils";
 import { AutoCompleteSuggest } from "./obsidian/suggesters/AutoCompleteSuggester";
@@ -13,13 +13,17 @@ import {
     DEFAULT_SETTINGS,
     ICON_DATA,
     REFRESH_ICON,
-} from "./slidesExtended-constants";
-import { SlidesExtendedDistribution } from "./slidesExtended-Distribution";
-import { SlidesExtendedSettingTab } from "./slidesExtended-SettingTab";
+    TEMPLATE_ICON,
+} from "./ultimateSlides-constants";
+import { UltimateSlidesDistribution } from "./ultimateSlides-Distribution";
+import { UltimateSlidesSettingTab } from "./ultimateSlides-SettingTab";
+import { TemplateManager } from "./template-inserter/TemplateManager";
+import { TemplateInserterModal } from "./template-inserter/TemplateInserterModal";
 
-export class SlidesExtendedPlugin extends Plugin {
-    settings: SlidesExtendedSettings;
+export class UltimateSlidesPlugin extends Plugin {
+    settings: UltimateSlidesSettings;
     obsidianUtils: ObsidianUtils;
+    templateManager: TemplateManager;
 
     private revealServer: RevealServer;
     private autoCompleteSuggester: AutoCompleteSuggest;
@@ -34,6 +38,7 @@ export class SlidesExtendedPlugin extends Plugin {
 
         addIcon("slides", ICON_DATA);
         addIcon("refresh", REFRESH_ICON);
+        addIcon("template", TEMPLATE_ICON);
 
         const numPort = Number(this.settings.port);
         this.port = Number.isNaN(numPort) ? 3000 : numPort;
@@ -41,6 +46,10 @@ export class SlidesExtendedPlugin extends Plugin {
         this.serverUrl = new URL(`http://${this.host}:${this.port}`);
 
         this.obsidianUtils = new ObsidianUtils(this.app, this.settings);
+
+        // Initialize template manager
+        this.templateManager = new TemplateManager(this);
+        await this.templateManager.loadTemplates();
 
         this.registerView(
             REVEAL_PREVIEW_VIEW,
@@ -60,6 +69,11 @@ export class SlidesExtendedPlugin extends Plugin {
 
         this.addRibbonIcon("slides", "Show slide preview", async () => {
             await this.showView();
+        });
+
+        // Template inserter ribbon icon
+        this.addRibbonIcon("template", "Insert slide template", () => {
+            this.openTemplateInserter();
         });
 
         this.addCommand({
@@ -113,7 +127,16 @@ export class SlidesExtendedPlugin extends Plugin {
             callback: async () => this.revealServer.start(),
         });
 
-        this.addSettingTab(new SlidesExtendedSettingTab(this.app, this));
+        // Template inserter command
+        this.addCommand({
+            id: "insert-slide-template",
+            name: "Insert slide template",
+            editorCallback: (editor) => {
+                new TemplateInserterModal(this.app, this.templateManager, editor).open();
+            },
+        });
+
+        this.addSettingTab(new UltimateSlidesSettingTab(this.app, this));
         this.app.workspace.onLayoutReady(this.layoutReady);
 
         this.slideProcessor = new EmbeddedSlideProcessor(this);
@@ -126,6 +149,13 @@ export class SlidesExtendedPlugin extends Plugin {
         );
     }
 
+    openTemplateInserter() {
+        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (view) {
+            new TemplateInserterModal(this.app, this.templateManager, view.editor).open();
+        }
+    }
+
     get url(): URL {
         return this.serverUrl;
     }
@@ -133,22 +163,22 @@ export class SlidesExtendedPlugin extends Plugin {
     layoutReady = async () => {
         try {
             const version = this.manifest.version;
-            const distribution = new SlidesExtendedDistribution(this);
+            const distribution = new UltimateSlidesDistribution(this);
 
             console.log(
-                "Slides Extended v%s, needsReload=%s",
+                "Ultimate Slides v%s, needsReload=%s",
                 version,
                 distribution.isOutdated(),
             );
             if (distribution.isOutdated()) {
                 await distribution.update();
-                console.log("Slides Extended updated to v%s", version);
+                console.log("Ultimate Slides updated to v%s", version);
             }
 
             this.configureServer();
             await this.initServer();
         } catch (err) {
-            console.debug("Slides Extended caught an error", err);
+            console.debug("Ultimate Slides caught an error", err);
         }
 
         this.autoCompleteSuggester = new AutoCompleteSuggest(this.app);
@@ -285,7 +315,7 @@ export class SlidesExtendedPlugin extends Plugin {
     }
 
     async onunload() {
-        console.debug("unloading Slides Extended");
+        console.debug("unloading Ultimate Slides");
         await this.stopServer();
     }
 
@@ -300,7 +330,7 @@ export class SlidesExtendedPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
-        console.debug("Slides Extended: settings saved");
+        console.debug("Ultimate Slides: settings saved");
 
         await this.stopServer();
 
@@ -318,7 +348,7 @@ export class SlidesExtendedPlugin extends Plugin {
         }
     }
 
-    async update(newSettings: SlidesExtendedSettings) {
+    async update(newSettings: UltimateSlidesSettings) {
         this.settings = newSettings;
         await this.saveSettings();
     }

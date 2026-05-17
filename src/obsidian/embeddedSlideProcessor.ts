@@ -1,10 +1,10 @@
 import { load } from "js-yaml";
 import type { EmbeddedSlideParameters } from "../@types";
-import type { SlidesExtendedPlugin } from "../slidesExtended-Plugin";
+import type { UltimateSlidesPlugin } from "../ultimateSlides-Plugin";
 
 export class EmbeddedSlideProcessor {
-    private plugin: SlidesExtendedPlugin;
-    constructor(plugin: SlidesExtendedPlugin) {
+    private plugin: UltimateSlidesPlugin;
+    constructor(plugin: UltimateSlidesPlugin) {
         this.plugin = plugin;
     }
 
