@@ -9,6 +9,8 @@ import {
     RevealPreviewView,
 } from "./reveal/revealPreviewView";
 import { RevealServer } from "./reveal/revealServer";
+import { TemplateInserterModal } from "./template-inserter/TemplateInserterModal";
+import { TemplateManager } from "./template-inserter/TemplateManager";
 import {
     DEFAULT_SETTINGS,
     ICON_DATA,
@@ -17,8 +19,6 @@ import {
 } from "./ultimateSlides-constants";
 import { UltimateSlidesDistribution } from "./ultimateSlides-Distribution";
 import { UltimateSlidesSettingTab } from "./ultimateSlides-SettingTab";
-import { TemplateManager } from "./template-inserter/TemplateManager";
-import { TemplateInserterModal } from "./template-inserter/TemplateInserterModal";
 
 export class UltimateSlidesPlugin extends Plugin {
     settings: UltimateSlidesSettings;
@@ -132,7 +132,11 @@ export class UltimateSlidesPlugin extends Plugin {
             id: "insert-slide-template",
             name: "Insert slide template",
             editorCallback: (editor) => {
-                new TemplateInserterModal(this.app, this.templateManager, editor).open();
+                new TemplateInserterModal(
+                    this.app,
+                    this.templateManager,
+                    editor,
+                ).open();
             },
         });
 
@@ -152,7 +156,11 @@ export class UltimateSlidesPlugin extends Plugin {
     openTemplateInserter() {
         const view = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (view) {
-            new TemplateInserterModal(this.app, this.templateManager, view.editor).open();
+            new TemplateInserterModal(
+                this.app,
+                this.templateManager,
+                view.editor,
+            ).open();
         }
     }
 

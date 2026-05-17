@@ -17,6 +17,21 @@
             width: 90% !important;
             height: auto !important;
         }
+
+        /* Menu as side panel - push content instead of overlay */
+        .slide-menu-wrapper.active ~ .reveal {
+            transform: translateX(25%) scale(0.75) !important;
+            transition: transform 0.3s ease;
+        }
+        .reveal {
+            transition: transform 0.3s ease;
+        }
+        .slide-menu-wrapper {
+            z-index: 100;
+        }
+        .slide-menu {
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+        }
     </style>
     <link rel="stylesheet" href="{{{base}}}{{{themeUrl}}}" id="theme" />
     <link rel="stylesheet" href="{{{base}}}{{{highlightThemeUrl}}}" />
@@ -196,6 +211,10 @@
             progress: true,
             history: true,
             center: true,
+            mouseWheel: true,       // Enable scroll navigation
+            touch: true,            // Enable swipe on mobile
+            keyboard: true,         // Enable keyboard navigation
+            overview: true,         // Enable overview mode (O key)
             transition: 'default', // none/fade/slide/convex/concave/zoom
             plugins: [
                 ObsidianMarkdown,
@@ -307,7 +326,16 @@
             {{/enableCustomControls}}
             {{#enableMenu}}
             menu: {
-                loadIcons: false
+                side: 'left',
+                width: 'third',
+                numbers: true,
+                titleSelector: 'h1, h2, h3',
+                useTextContentForMissingTitles: false,
+                hideMissingTitles: true,
+                markers: true,
+                loadIcons: false,
+                keyboard: true,
+                openOnInit: false
             },
             {{/enableMenu}}
             {{#enableAudioSlideshow}}
@@ -317,9 +345,8 @@
             {{/enableAudioSlideshow}}
         };
 
-        if ( pageInIframe() ) {
-            defaultOptions.scrollActivationWidth = 5;
-        }
+        // Enable scroll in iframe mode too
+        // scrollActivationWidth = null means use full slide width for scroll detection
 
         // options from URL query string
         const queryOptions = Reveal().getQueryHash() || {};

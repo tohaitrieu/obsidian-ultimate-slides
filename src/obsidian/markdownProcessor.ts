@@ -17,6 +17,7 @@ import { GridProcessor } from "./processors/gridProcessor";
 import { IconsProcessor } from "./processors/iconsProcessor";
 import { InternalLinkProcessor } from "./processors/internalLinkProcessor";
 import { LatexProcessor } from "./processors/latexProcessor";
+import { LayoutDirectiveProcessor } from "./processors/layout-directive-processor";
 import { MediaProcessor } from "./processors/mediaProcessor";
 import { MermaidProcessor } from "./processors/mermaidProcessor";
 import { MultipleFileProcessor } from "./processors/multipleFileProcessor";
@@ -36,6 +37,7 @@ export class MarkdownProcessor {
     private internalLinkProcessor: InternalLinkProcessor;
     private footnoteProcessor: FootnoteProcessor;
     private latexProcessor: LatexProcessor;
+    private layoutDirectiveProcessor: LayoutDirectiveProcessor;
     private formatProcessor: FormatProcessor;
     private excalidrawProcessor: ExcalidrawProcessor;
     private mermaidProcessor: MermaidProcessor;
@@ -61,6 +63,7 @@ export class MarkdownProcessor {
         this.internalLinkProcessor = new InternalLinkProcessor(utils);
         this.footnoteProcessor = new FootnoteProcessor();
         this.latexProcessor = new LatexProcessor();
+        this.layoutDirectiveProcessor = new LayoutDirectiveProcessor();
         this.formatProcessor = new FormatProcessor();
         this.excalidrawProcessor = new ExcalidrawProcessor(utils);
         this.mermaidProcessor = new MermaidProcessor();
@@ -167,6 +170,11 @@ export class MarkdownProcessor {
     private processSlideStructure(markdown: string, options: Options): string {
         // Process slide structural elements in a specific order
         return [
+            // Convert layout directives (columns-N, grid-2x2, timeline) to grid HTML
+            {
+                name: "layoutDirectiveProcessor",
+                processor: this.layoutDirectiveProcessor,
+            },
             // Skip slides marked to be hidden
             {
                 name: "skipSlideProcessor",

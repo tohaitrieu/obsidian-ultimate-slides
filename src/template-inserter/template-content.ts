@@ -40,17 +40,14 @@ note: Speaker notes here`,
 
 ## Two Columns Layout
 
-<grid drag="45 70" drop="5 20" align="topleft">
+columns-2
+### Left Column
 
 Content for left column goes here. Add bullet points, text, or other elements.
 
-</grid>
-
-<grid drag="45 70" drop="52 20" align="topleft">
+### Right Column
 
 Content for right column goes here. Add bullet points, text, or other elements.
-
-</grid>
 
 note: Speaker notes here`,
 
@@ -58,29 +55,18 @@ note: Speaker notes here`,
 
 ## Three Columns
 
-<grid drag="30 75" drop="2 15" align="topleft">
-
+columns-3
 ### Column 1
 
 First column content
-
-</grid>
-
-<grid drag="30 75" drop="35 15" align="topleft">
 
 ### Column 2
 
 Second column content
 
-</grid>
-
-<grid drag="30 75" drop="68 15" align="topleft">
-
 ### Column 3
 
 Third column content
-
-</grid>
 
 note: Speaker notes here`,
 
@@ -88,59 +74,49 @@ note: Speaker notes here`,
 
 ## Image Grid
 
-<grid drag="48 45" drop="1 5">
+grid-2x2
+### Image 1
+
 ![[image-1.webp]]
-</grid>
 
-<grid drag="48 45" drop="51 5">
+### Image 2
+
 ![[image-2.webp]]
-</grid>
 
-<grid drag="48 45" drop="1 52">
+### Image 3
+
 ![[image-3.webp]]
-</grid>
 
-<grid drag="48 45" drop="51 52">
+### Image 4
+
 ![[image-4.webp]]
-</grid>
 
 note: Speaker notes here`,
 
-    "timeline": `---
+    timeline: `---
 
 ## Project Timeline
 
-<grid drag="20 70" drop="5 15" align="top">
+timeline
+### Q1 2024
 
-**Q1 2024**
 <!-- element class="fragment" -->
 Research & Planning
 
-</grid>
+### Q2 2024
 
-<grid drag="20 70" drop="27 15" align="top">
-
-**Q2 2024**
 <!-- element class="fragment" -->
 Development Phase
 
-</grid>
+### Q3 2024
 
-<grid drag="20 70" drop="49 15" align="top">
-
-**Q3 2024**
 <!-- element class="fragment" -->
 Testing & QA
 
-</grid>
+### Q4 2024
 
-<grid drag="20 70" drop="71 15" align="top">
-
-**Q4 2024**
 <!-- element class="fragment" -->
 Launch & Deploy
-
-</grid>
 
 note: Speaker notes here`,
 };
@@ -153,7 +129,7 @@ export const STRUCTURE_TEMPLATES: Record<string, string> = {
 # 📊 Section Title
 ## Subtitle or description`,
 
-    "cta": `---
+    cta: `---
 
 <!-- background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) -->
 
@@ -203,7 +179,7 @@ export const TRADING_TEMPLATES: Record<string, string> = {
 
 ## GOLD - Key Levels
 
-<grid drag="45 70" drop="5 15" align="topleft">
+<grid drag="45 70" drop="5 20" align="topleft">
 
 \`\`\`
 Resistance 2: 2,450
@@ -217,7 +193,7 @@ Support 2:    2,320
 
 </grid>
 
-<grid drag="45 70" drop="52 15" align="topleft">
+<grid drag="45 70" drop="52 20" align="topleft">
 
 <!-- element class="fragment" -->
 🎯 **Bias:** Bullish
@@ -237,7 +213,7 @@ note: Speaker notes here`,
 };
 
 export const DATA_TEMPLATES: Record<string, string> = {
-    "table": `---
+    table: `---
 
 ## Data Table
 
@@ -253,28 +229,28 @@ note: Speaker notes here`,
 
 ## Key Statistics
 
-<grid drag="30 40" drop="2 15" align="center" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px;">
+<grid drag="30 40" drop="2 20" align="center" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px;">
 
 # 150%
 **Growth Rate**
 
 </grid>
 
-<grid drag="30 40" drop="35 15" align="center" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px;">
+<grid drag="30 40" drop="35 20" align="center" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px;">
 
 # $2.5M
 **Revenue**
 
 </grid>
 
-<grid drag="30 40" drop="68 15" align="center" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px;">
+<grid drag="30 40" drop="68 20" align="center" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px;">
 
 # 50K+
 **Active Users**
 
 </grid>
 
-<grid drag="90 30" drop="5 60" align="center">
+<grid drag="90 30" drop="5 62" align="center">
 
 <!-- element class="fragment" -->
 > Strong momentum continues into next quarter
@@ -301,7 +277,7 @@ note: Speaker notes here`,
 
 ## Performance Dashboard
 
-<grid drag="23 40" drop="1 10" align="center" style="background: rgba(0,255,0,0.1); border-radius: 8px;">
+<grid drag="23 38" drop="1 18" align="center" style="background: rgba(0,255,0,0.1); border-radius: 8px;">
 
 ### 📈 +15.2%
 Monthly Return
@@ -310,7 +286,7 @@ _↑ 3.5% vs last month_
 
 </grid>
 
-<grid drag="23 40" drop="26 10" align="center" style="background: rgba(255,255,0,0.1); border-radius: 8px;">
+<grid drag="23 38" drop="26 18" align="center" style="background: rgba(255,255,0,0.1); border-radius: 8px;">
 
 ### 💰 $125K
 Total Profit
@@ -319,7 +295,7 @@ _↑ $25K vs target_
 
 </grid>
 
-<grid drag="23 40" drop="51 10" align="center" style="background: rgba(0,150,255,0.1); border-radius: 8px;">
+<grid drag="23 38" drop="51 18" align="center" style="background: rgba(0,150,255,0.1); border-radius: 8px;">
 
 ### 📊 72%
 Win Rate
@@ -328,7 +304,7 @@ _↑ 5% improvement_
 
 </grid>
 
-<grid drag="23 40" drop="76 10" align="center" style="background: rgba(255,0,255,0.1); border-radius: 8px;">
+<grid drag="23 38" drop="76 18" align="center" style="background: rgba(255,0,255,0.1); border-radius: 8px;">
 
 ### 🎯 2.5:1
 Risk/Reward
@@ -337,7 +313,7 @@ _Consistent ratio_
 
 </grid>
 
-<grid drag="96 45" drop="2 55" align="topleft">
+<grid drag="96 38" drop="2 58" align="topleft">
 
 <!-- element class="fragment" -->
 > 💡 **Insight:** Strong performance driven by improved entry timing
@@ -366,7 +342,7 @@ export const CONTENT_TEMPLATES: Record<string, string> = {
 
 note: Speaker notes here`,
 
-    "quote": `---
+    quote: `---
 
 <!-- background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) -->
 
@@ -382,11 +358,11 @@ note: Speaker notes here`,
 
 note: Speaker notes here`,
 
-    "checklist": `---
+    checklist: `---
 
 ## Checklist
 
-<grid drag="45 80" drop="5 12" align="topleft">
+<grid drag="45 70" drop="5 20" align="topleft">
 
 <!-- element class="fragment" -->
 ☑️ Check market structure
@@ -402,7 +378,7 @@ note: Speaker notes here`,
 
 </grid>
 
-<grid drag="45 80" drop="52 12" align="topleft">
+<grid drag="45 70" drop="52 20" align="topleft">
 
 <!-- element class="fragment" -->
 ☑️ Define stop loss
@@ -443,14 +419,14 @@ export const COMPARISON_TEMPLATES: Record<string, string> = {
 
 ## Before & After
 
-<grid drag="48 75" drop="1 10">
+<grid drag="48 68" drop="1 20">
 
 ### Before
 ![[before-image.webp]]
 
 </grid>
 
-<grid drag="48 75" drop="51 10">
+<grid drag="48 68" drop="51 20">
 
 ### After
 ![[after-image.webp]]
@@ -470,7 +446,7 @@ note: Speaker notes here`,
 
 ## Analysis
 
-<grid drag="45 80" drop="3 12" align="topleft" style="background: rgba(0,255,0,0.05); border-radius: 10px; padding: 15px;">
+<grid drag="45 70" drop="3 20" align="topleft" style="background: rgba(0,255,0,0.05); border-radius: 10px; padding: 15px;">
 
 ### 🟢 Bullish Factors
 
@@ -485,7 +461,7 @@ note: Speaker notes here`,
 
 </grid>
 
-<grid drag="45 80" drop="52 12" align="topleft" style="background: rgba(255,0,0,0.05); border-radius: 10px; padding: 15px;">
+<grid drag="45 70" drop="52 20" align="topleft" style="background: rgba(255,0,0,0.05); border-radius: 10px; padding: 15px;">
 
 ### 🔴 Bearish Factors
 
@@ -546,7 +522,7 @@ note: Speaker notes here`,
 };
 
 export const INTERACTIVE_TEMPLATES: Record<string, string> = {
-    "quiz": `---
+    quiz: `---
 
 ## ❓ What is the primary trend?
 
@@ -603,7 +579,7 @@ note: Speaker notes here`,
 
 ## Embedded Content
 
-<grid drag="90 75" drop="5 15">
+<grid drag="90 70" drop="5 20">
 
 <iframe src="https://example.com/embed" width="100%" height="100%" frameborder="0"></iframe>
 

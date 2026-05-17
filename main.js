@@ -63747,6 +63747,129 @@ var LatexProcessor = class {
   }
 };
 
+// src/obsidian/processors/layout-directive-processor.ts
+var LayoutDirectiveProcessor = class {
+  process(markdown) {
+    const slides = markdown.split(/\n---\n/);
+    const processedSlides = slides.map((slide) => this.processSlide(slide));
+    return processedSlides.join("\n---\n");
+  }
+  processSlide(slide) {
+    if (this.hasDirectiveInCodeBlock(slide)) {
+      return slide;
+    }
+    const columnsMatch = slide.match(/^(columns-(\d))\s*$/m);
+    if (columnsMatch) {
+      const numColumns = Number.parseInt(columnsMatch[2], 10);
+      if (numColumns >= 2 && numColumns <= 4) {
+        return this.processColumns(slide, columnsMatch[0], numColumns);
+      }
+    }
+    if (/^grid-2x2\s*$/m.test(slide)) {
+      return this.processGrid2x2(slide);
+    }
+    if (/^timeline\s*$/m.test(slide)) {
+      return this.processTimeline(slide);
+    }
+    return slide;
+  }
+  hasDirectiveInCodeBlock(slide) {
+    const codeBlockRegex = /```[\s\S]*?```/g;
+    const codeBlocks = slide.match(codeBlockRegex) || [];
+    for (const block of codeBlocks) {
+      if (/columns-\d|grid-2x2|timeline/.test(block)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  processColumns(slide, directive, numColumns) {
+    const content = slide.replace(
+      new RegExp(`^${directive}\\s*$`, "m"),
+      ""
+    );
+    const sections = content.split(/(?=^### )/m).filter((s) => s.trim());
+    let titlePart = "";
+    let columnSections = sections;
+    if (sections.length > 0 && !sections[0].startsWith("### ")) {
+      titlePart = sections[0];
+      columnSections = sections.slice(1);
+    }
+    const divs = columnSections.slice(0, numColumns).map((section) => {
+      return `<div>
+
+${section.trim()}
+
+</div>`;
+    });
+    return `${titlePart}
+<split even>
+
+${divs.join("\n\n")}
+
+</split>`;
+  }
+  processGrid2x2(slide) {
+    const content = slide.replace(/^grid-2x2\s*$/m, "");
+    const sections = content.split(/(?=^### )/m).filter((s) => s.trim());
+    let titlePart = "";
+    let gridSections = sections;
+    if (sections.length > 0 && !sections[0].startsWith("### ")) {
+      titlePart = sections[0];
+      gridSections = sections.slice(1);
+    }
+    const positions = [
+      { x: 2, y: 22 },
+      // top-left
+      { x: 51, y: 22 },
+      // top-right
+      { x: 2, y: 58 },
+      // bottom-left
+      { x: 51, y: 58 }
+      // bottom-right
+    ];
+    const grids = gridSections.slice(0, 4).map((section, index) => {
+      const pos = positions[index];
+      return `<grid drag="47 33" drop="${pos.x} ${pos.y}" align="topleft">
+
+${section.trim()}
+
+</grid>`;
+    });
+    const titleGrid = titlePart.trim() ? `<grid drag="100 18" drop="0 2" align="center">
+
+${titlePart.trim()}
+
+</grid>
+
+` : "";
+    return `${titleGrid}${grids.join("\n\n")}`;
+  }
+  processTimeline(slide) {
+    const content = slide.replace(/^timeline\s*$/m, "");
+    const sections = content.split(/(?=^### )/m).filter((s) => s.trim());
+    let titlePart = "";
+    let timelineSections = sections;
+    if (sections.length > 0 && !sections[0].startsWith("### ")) {
+      titlePart = sections[0];
+      timelineSections = sections.slice(1);
+    }
+    const divs = timelineSections.slice(0, 5).map((section) => {
+      return `<div>
+
+${section.trim()}
+
+</div>`;
+    });
+    return `${titlePart}
+<split even>
+
+${divs.join("\n\n")}
+
+</split>`;
+  }
+};
+
 // src/util.ts
 var import_node_path = require("node:path");
 function has(object, key) {
@@ -64043,9 +64166,7 @@ var MermaidProcessor = class {
     const after = markdown.substring(endIdx + 3);
     const content = markdown.substring(startIdx + 11, endIdx);
     const result = `${before}
-<div class="mermaid">
-${content}
-</div>
+<pre class="mermaid">${content}</pre>
 ${after}`;
     return this.transformMermaid(result);
   }
@@ -64369,6 +64490,7 @@ var MarkdownProcessor = class {
   internalLinkProcessor;
   footnoteProcessor;
   latexProcessor;
+  layoutDirectiveProcessor;
   formatProcessor;
   excalidrawProcessor;
   mermaidProcessor;
@@ -64393,6 +64515,7 @@ var MarkdownProcessor = class {
     this.internalLinkProcessor = new InternalLinkProcessor(utils);
     this.footnoteProcessor = new FootnoteProcessor();
     this.latexProcessor = new LatexProcessor();
+    this.layoutDirectiveProcessor = new LayoutDirectiveProcessor();
     this.formatProcessor = new FormatProcessor();
     this.excalidrawProcessor = new ExcalidrawProcessor(utils);
     this.mermaidProcessor = new MermaidProcessor();
@@ -64471,6 +64594,11 @@ var MarkdownProcessor = class {
   }
   processSlideStructure(markdown, options) {
     return [
+      // Convert layout directives (columns-N, grid-2x2, timeline) to grid HTML
+      {
+        name: "layoutDirectiveProcessor",
+        processor: this.layoutDirectiveProcessor
+      },
       // Skip slides marked to be hidden
       {
         name: "skipSlideProcessor",
@@ -64660,7 +64788,7 @@ var ObsidianUtils = class {
     this.pluginDir = import_node_path2.default.join(
       this.vaultDir,
       this.app.vault.configDir,
-      "plugins/slides-extended/"
+      "plugins/ultimate-slides/"
     );
     this.distDir = import_node_path2.default.join(this.pluginDir, "dist/");
     this.exportDir = import_node_path2.default.join(
@@ -71248,388 +71376,290 @@ var renderIndex = (dirs, files) => {
 </body></html>`;
 };
 
-// src/ultimateSlides-Distribution.ts
-var import_node_fs2 = require("node:fs");
-var import_node_path7 = __toESM(require("node:path"));
-var import_jszip = __toESM(require_lib5());
+// src/template-inserter/TemplateInserterModal.ts
 var import_obsidian8 = require("obsidian");
-var UltimateSlidesDistribution = class {
-  plugin;
-  pluginDirectory;
-  distDirectory;
-  constructor(plugin) {
-    this.plugin = plugin;
-    this.pluginDirectory = this.plugin.obsidianUtils.pluginDirectory;
-    this.distDirectory = this.plugin.obsidianUtils.distDirectory;
+var TemplateInserterModal = class extends import_obsidian8.Modal {
+  templateManager;
+  editor;
+  selectedCategory = "All";
+  searchQuery = "";
+  constructor(app, templateManager, editor) {
+    super(app);
+    this.templateManager = templateManager;
+    this.editor = editor;
   }
-  isOutdated() {
-    if (!(0, import_node_fs2.existsSync)(this.distDirectory)) {
-      return true;
+  onOpen() {
+    const { contentEl, modalEl } = this;
+    contentEl.empty();
+    modalEl.addClass("ultimate-slides-template-modal");
+    const header = contentEl.createDiv({ cls: "us-modal-header" });
+    header.createEl("h2", { text: "\u{1F4CA} Insert Slide Template" });
+    const searchContainer = contentEl.createDiv({
+      cls: "us-search-container"
+    });
+    const searchInput = searchContainer.createEl("input", {
+      type: "text",
+      placeholder: "Search templates...",
+      cls: "us-search-input"
+    });
+    searchInput.addEventListener("input", (e) => {
+      this.searchQuery = e.target.value.toLowerCase();
+      this.renderTemplates(templateGrid);
+    });
+    const tabsContainer = contentEl.createDiv({ cls: "us-tabs-container" });
+    const categories = ["All", ...this.templateManager.getCategories()];
+    for (const category of categories) {
+      const tab = tabsContainer.createEl("button", {
+        text: category,
+        cls: `us-tab ${category === this.selectedCategory ? "us-tab-active" : ""}`
+      });
+      tab.addEventListener("click", () => {
+        this.selectedCategory = category;
+        tabsContainer.querySelectorAll(".us-tab").forEach((t) => t.removeClass("us-tab-active"));
+        tab.addClass("us-tab-active");
+        this.renderTemplates(templateGrid);
+      });
     }
-    const revealJs = import_node_path7.default.join(this.distDirectory, "reveal.js");
-    return !(0, import_node_fs2.existsSync)(revealJs);
+    const templateGrid = contentEl.createDiv({ cls: "us-template-grid" });
+    this.renderTemplates(templateGrid);
   }
-  isOldVersion() {
-    return false;
-  }
-  async update() {
-    const version = this.plugin.manifest.version;
-    const downloadUrl = `https://github.com/ebullient/obsidian-slides-extended/releases/download/${version}/slides-extended.zip`;
-    const backupDir = import_node_path7.default.join(this.pluginDirectory, "dist-backup");
-    let didBackup = false;
-    if ((0, import_node_fs2.existsSync)(this.distDirectory)) {
-      console.debug(
-        "Backing up existing distribution files before update"
+  renderTemplates(container) {
+    container.empty();
+    let templates = this.templateManager.getAllTemplates();
+    if (this.selectedCategory !== "All") {
+      templates = templates.filter(
+        (t) => t.category === this.selectedCategory
       );
-      if ((0, import_node_fs2.existsSync)(backupDir)) {
-        (0, import_node_fs2.rmSync)(backupDir, { recursive: true, force: true });
-      }
-      (0, import_node_fs2.renameSync)(this.distDirectory, backupDir);
-      didBackup = true;
     }
-    try {
-      const response = await (0, import_obsidian8.requestUrl)(downloadUrl);
-      if (response.status !== 200) {
-        throw new Error(
-          `Failed to download ${downloadUrl}: HTTP ${response.status}`
-        );
-      }
-      const zip = new import_jszip.default();
-      const contents = await zip.loadAsync(response.arrayBuffer);
-      const pluginDirectory = this.pluginDirectory;
-      for (const filename of Object.keys(contents.files)) {
-        if (!contents.files[filename].dir) {
-          zip.file(filename).async("nodebuffer").then((content) => {
-            const dest = import_node_path7.default.join(pluginDirectory, filename);
-            const dir = import_node_path7.default.dirname(dest);
-            (0, import_node_fs2.mkdirSync)(dir, { recursive: true });
-            (0, import_node_fs2.writeFileSync)(dest, content);
+    if (this.searchQuery) {
+      templates = templates.filter(
+        (t) => t.name.toLowerCase().includes(this.searchQuery) || t.description.toLowerCase().includes(this.searchQuery)
+      );
+    }
+    if (templates.length === 0) {
+      container.createEl("p", {
+        text: "No templates found",
+        cls: "us-no-results"
+      });
+      return;
+    }
+    for (const template of templates) {
+      const card = container.createDiv({ cls: "us-template-card" });
+      const preview = card.createDiv({ cls: "us-template-preview" });
+      this.renderPreviewSkeleton(preview, template.id);
+      const info = card.createDiv({ cls: "us-template-info" });
+      info.createEl("span", {
+        text: template.icon,
+        cls: "us-template-icon"
+      });
+      info.createEl("span", {
+        text: template.name,
+        cls: "us-template-name"
+      });
+      const badge = card.createDiv({ cls: "us-template-badge" });
+      badge.createEl("span", { text: template.category });
+      card.addEventListener("click", () => {
+        this.insertTemplate(template);
+      });
+      card.setAttribute("title", template.description);
+    }
+  }
+  renderPreviewSkeleton(container, templateId) {
+    const skeletonMap = {
+      "text-image-1-3": () => {
+        const left = container.createDiv({
+          cls: "us-skel-col us-skel-30"
+        });
+        left.createDiv({ cls: "us-skel-title" });
+        left.createDiv({ cls: "us-skel-line" });
+        left.createDiv({ cls: "us-skel-line us-skel-short" });
+        container.createDiv({
+          cls: "us-skel-col us-skel-65 us-skel-image"
+        });
+      },
+      "image-overlay-bottom": () => {
+        container.createDiv({ cls: "us-skel-image us-skel-full" });
+        const overlay = container.createDiv({
+          cls: "us-skel-overlay-bottom"
+        });
+        overlay.createDiv({ cls: "us-skel-title" });
+      },
+      "2-columns": () => {
+        container.createDiv({ cls: "us-skel-col us-skel-45" }).createDiv({ cls: "us-skel-lines" });
+        container.createDiv({ cls: "us-skel-col us-skel-45" }).createDiv({ cls: "us-skel-lines" });
+      },
+      "3-columns": () => {
+        for (let i = 0; i < 3; i++) {
+          container.createDiv({ cls: "us-skel-col us-skel-30" }).createDiv({ cls: "us-skel-lines" });
+        }
+      },
+      "grid-2x2": () => {
+        container.addClass("us-skel-grid-2x2");
+        for (let i = 0; i < 4; i++) {
+          container.createDiv({
+            cls: "us-skel-grid-item us-skel-image"
           });
         }
-      }
-      if (didBackup && (0, import_node_fs2.existsSync)(backupDir)) {
-        console.debug("Update successful, removing backup");
-        (0, import_node_fs2.rmSync)(backupDir, { recursive: true, force: true });
-      }
-    } catch (error) {
-      console.error("Failed to update distribution files:", error);
-      if (didBackup && (0, import_node_fs2.existsSync)(backupDir)) {
-        console.debug("Restoring backup due to update failure");
-        if ((0, import_node_fs2.existsSync)(this.distDirectory)) {
-          (0, import_node_fs2.rmSync)(this.distDirectory, {
-            recursive: true,
-            force: true
+      },
+      "section-header": () => {
+        container.addClass("us-skel-centered");
+        container.createDiv({ cls: "us-skel-title us-skel-large" });
+        container.createDiv({ cls: "us-skel-subtitle" });
+      },
+      "key-levels": () => {
+        container.createDiv({
+          cls: "us-skel-col us-skel-45 us-skel-code"
+        });
+        const right = container.createDiv({
+          cls: "us-skel-col us-skel-45"
+        });
+        for (let i = 0; i < 4; i++) {
+          right.createDiv({ cls: "us-skel-line us-skel-short" });
+        }
+      },
+      table: () => {
+        container.addClass("us-skel-centered");
+        container.createDiv({ cls: "us-skel-title" });
+        container.createDiv({ cls: "us-skel-table" });
+      },
+      "fragment-list": () => {
+        container.addClass("us-skel-centered");
+        container.createDiv({ cls: "us-skel-title" });
+        for (let i = 0; i < 3; i++) {
+          container.createDiv({ cls: "us-skel-line" });
+        }
+      },
+      timeline: () => {
+        container.addClass("us-skel-timeline");
+        for (let i = 0; i < 4; i++) {
+          const item = container.createDiv({
+            cls: "us-skel-timeline-item"
           });
+          item.createDiv({ cls: "us-skel-dot" });
+          item.createDiv({ cls: "us-skel-line us-skel-short" });
         }
-        (0, import_node_fs2.renameSync)(backupDir, this.distDirectory);
-      }
-      throw error;
-    }
-  }
-};
-
-// src/ultimateSlides-SettingTab.ts
-var import_obsidian9 = require("obsidian");
-var import_obsidian_utilities2 = __toESM(require_main());
-
-// src/obsidian/suggesters/ThemeSuggester.ts
-var import_node_fs3 = __toESM(require("node:fs"));
-var import_obsidian_utilities = __toESM(require_main());
-var highlightCss = (path6, basename3) => {
-  return path6.contains("highlight") || basename3.contains("highlight") || basename3.contains("hljs");
-};
-var themeCss = (path6, basename3) => !highlightCss(path6, basename3);
-var getFiles = (directories, include) => {
-  const result = /* @__PURE__ */ new Set();
-  for (const directory of directories) {
-    if (!import_node_fs3.default.existsSync(directory)) {
-      continue;
-    }
-    for (const file of import_node_fs3.default.readdirSync(directory)) {
-      if (include(directory, file)) {
-        result.add(file);
-      }
-    }
-  }
-  return result;
-};
-var getThemeFiles = (utils, type2) => {
-  const searchPath = type2 === "highlight" ? utils.getHighlightSearchPath() : utils.getThemeSearchPath();
-  return [
-    ...getFiles(searchPath, (path6, basename3) => {
-      if (basename3.endsWith(".css")) {
-        return type2 === "highlight" ? highlightCss(path6, basename3) : themeCss(path6, basename3);
-      }
-      return false;
-    })
-  ];
-};
-var ThemeInputSuggest = class extends import_obsidian_utilities.FuzzyInputSuggest {
-  getItemText(item) {
-    return item;
-  }
-  renderNote(_noteEL, _result) {
-  }
-  renderTitle(titleEl, result) {
-    this.renderMatches(titleEl, result.item, result.match.matches);
-  }
-};
-
-// src/ultimateSlides-SettingTab.ts
-function isFolder(file) {
-  return file instanceof import_obsidian9.TFolder;
-}
-var UltimateSlidesSettingTab = class extends import_obsidian9.PluginSettingTab {
-  plugin;
-  newSettings;
-  constructor(app, plugin) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
-  async save() {
-    await this.plugin.update(this.newSettings);
-  }
-  /** Save on exit */
-  hide() {
-    this.save();
-  }
-  /** Show/validate setting changes */
-  display() {
-    this.newSettings = JSON.parse(JSON.stringify(this.plugin.settings));
-    this.drawElements();
-  }
-  drawElements() {
-    const { containerEl } = this;
-    containerEl.empty();
-    new import_obsidian9.Setting(containerEl).setName("Slide preview mode").setDesc("Select the slide preview pane display mode.").addDropdown((cb) => {
-      cb.addOption("tab", "as Tab").addOption("split", "split Workspace").addOption("sidebar", "right sidebar").setValue(this.newSettings.paneMode).onChange((value) => {
-        if (value === "tab" || value === "split" || value === "sidebar") {
-          this.newSettings.paneMode = value;
-        } else {
-          console.debug("Invalid pane mode", value);
+      },
+      "stats-cards": () => {
+        container.addClass("us-skel-cards-row");
+        for (let i = 0; i < 3; i++) {
+          const card = container.createDiv({
+            cls: "us-skel-stat-card"
+          });
+          card.createDiv({ cls: "us-skel-stat-num" });
+          card.createDiv({ cls: "us-skel-line us-skel-short" });
         }
-      });
-    });
-    new import_obsidian9.Setting(containerEl).setName("Automatically start server").setDesc(
-      "When enabled, the server for rendering slides will automatically start when Obsidian starts."
-    ).addToggle(
-      (value) => value.setValue(this.newSettings.autoStart).onChange((value2) => {
-        this.newSettings.autoStart = value2;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Server port").setDesc(
-      "Specify the port number for the server to listen on. Default is 3000."
-    ).addText(
-      (text) => text.setPlaceholder("3000").setValue(this.newSettings.port).onChange((value) => {
-        this.newSettings.port = value;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Server host").setDesc(
-      "Specify the host for the server to listen on. Default is localhost. Use 0.0.0.0 to allow external connections."
-    ).addText(
-      (text) => text.setPlaceholder("localhost").setValue(this.newSettings.host).onChange((value) => {
-        this.newSettings.host = value;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Auto reload").setDesc(
-      "When enabled, the slide preview window automatically updates upon detecting changes in the source file."
-    ).addToggle(
-      (value) => value.setValue(this.newSettings.autoReload).onChange((value2) => {
-        this.newSettings.autoReload = value2;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Auto complete").setDesc(
-      'Enable auto-complete inputs. "Always" enables it everywhere, "When slide preview is active" enables it only when the slide preview is active, and "Never" disables it.'
-    ).addDropdown((cb) => {
-      cb.addOption("always", "Always").addOption("inPreview", "When slide preview is active").addOption("never", "Never").setValue(this.newSettings.autoComplete).onChange((value) => {
-        this.newSettings.autoComplete = value;
-      });
-    });
-    new import_obsidian9.Setting(containerEl).setName("Export directory").setDesc(
-      "Specify the directory where Ultimate Slides should export presentations."
-    ).addSearch((cb) => {
-      const folders = this.app.vault.getAllLoadedFiles().filter(isFolder);
-      const modal = new import_obsidian_utilities2.FolderInputSuggest(this.app, cb, folders);
-      modal.onSelect(({ item }) => {
-        cb.setValue(item.path);
-        cb.inputEl.trigger("input");
-        modal.close();
-      });
-      cb.setPlaceholder("Folder").setValue(this.newSettings.exportDirectory).onChange((value) => {
-        this.newSettings.exportDirectory = value;
-      });
-    });
-    const themeSettings = {};
-    const themeDesc = (type2, assets) => {
-      const desc = type2 === "slide" ? "*" : "*.highlight.css or *.hljs.css";
-      if (assets) {
-        return `Select the default ${desc} theme. Options include ${type2}.css files defined in ${assets}.`;
+      },
+      "before-after": () => {
+        container.createDiv({
+          cls: "us-skel-col us-skel-45 us-skel-image"
+        });
+        container.createDiv({
+          cls: "us-skel-col us-skel-45 us-skel-image"
+        });
+      },
+      "pros-cons": () => {
+        const left = container.createDiv({
+          cls: "us-skel-col us-skel-45 us-skel-green"
+        });
+        left.createDiv({ cls: "us-skel-lines" });
+        const right = container.createDiv({
+          cls: "us-skel-col us-skel-45 us-skel-red"
+        });
+        right.createDiv({ cls: "us-skel-lines" });
+      },
+      "steps-process": () => {
+        container.addClass("us-skel-steps");
+        for (let i = 0; i < 4; i++) {
+          const step = container.createDiv({ cls: "us-skel-step" });
+          step.createDiv({
+            cls: "us-skel-step-num",
+            text: String(i + 1)
+          });
+          step.createDiv({ cls: "us-skel-line us-skel-short" });
+        }
+      },
+      quiz: () => {
+        container.addClass("us-skel-quiz");
+        container.createDiv({ cls: "us-skel-title" });
+        const options = container.createDiv({
+          cls: "us-skel-quiz-options"
+        });
+        for (let i = 0; i < 4; i++) {
+          options.createDiv({ cls: "us-skel-quiz-option" });
+        }
+      },
+      quote: () => {
+        container.addClass("us-skel-centered");
+        container.createDiv({ cls: "us-skel-quote-mark", text: '"' });
+        container.createDiv({ cls: "us-skel-line" });
+        container.createDiv({ cls: "us-skel-line us-skel-short" });
+      },
+      "video-background": () => {
+        container.addClass("us-skel-video");
+        container.createDiv({ cls: "us-skel-play-btn", text: "\u25B6" });
+      },
+      "iframe-embed": () => {
+        container.addClass("us-skel-centered");
+        container.createDiv({ cls: "us-skel-title" });
+        container.createDiv({ cls: "us-skel-iframe" });
+      },
+      "comparison-table": () => {
+        container.addClass("us-skel-centered");
+        container.createDiv({ cls: "us-skel-title" });
+        container.createDiv({
+          cls: "us-skel-table us-skel-table-wide"
+        });
+      },
+      checklist: () => {
+        container.createDiv({
+          cls: "us-skel-col us-skel-45 us-skel-checklist"
+        });
+        container.createDiv({
+          cls: "us-skel-col us-skel-45 us-skel-checklist"
+        });
+      },
+      "kpi-dashboard": () => {
+        container.addClass("us-skel-cards-row");
+        for (let i = 0; i < 4; i++) {
+          container.createDiv({ cls: "us-skel-kpi-card" });
+        }
+      },
+      "code-highlight": () => {
+        container.addClass("us-skel-centered");
+        container.createDiv({ cls: "us-skel-title" });
+        container.createDiv({ cls: "us-skel-code us-skel-code-block" });
+      },
+      cta: () => {
+        container.addClass("us-skel-centered us-skel-gradient");
+        container.createDiv({ cls: "us-skel-title us-skel-large" });
+        container.createDiv({ cls: "us-skel-button" });
+      },
+      "thank-you": () => {
+        container.addClass("us-skel-centered us-skel-gradient");
+        container.createDiv({ cls: "us-skel-title us-skel-large" });
+        container.createDiv({ cls: "us-skel-table us-skel-small" });
       }
-      return `Select the default ${desc} theme.`;
     };
-    new import_obsidian9.Setting(containerEl).setName("Assets directory").setDesc(
-      "Specify a vault directory for custom themes, CSS, scripts, and HTML templates. CSS files are searched in css/ and the directory root. Scripts are searched in js/. HTML templates in html/."
-    ).addSearch((cb) => {
-      const folders = this.app.vault.getAllLoadedFiles().filter(isFolder);
-      const modal = new import_obsidian_utilities2.FolderInputSuggest(this.app, cb, folders);
-      modal.onSelect(({ item }) => {
-        cb.setValue(item.path);
-        cb.inputEl.trigger("input");
-        modal.close();
-      });
-      cb.setPlaceholder("Folder").setValue(this.newSettings.assetsDirectory).onChange((value) => {
-        this.newSettings.assetsDirectory = value;
-        for (const key in themeSettings) {
-          themeSettings[key].setDesc(themeDesc(key, value));
-        }
-      });
-    });
-    new import_obsidian9.Setting(containerEl).setName("Custom scripts").setHeading().setDesc(
-      "Load additional scripts into all presentations. Override per-note using property names."
-    );
-    new import_obsidian9.Setting(containerEl).setName("Scripts").setDesc(
-      "Comma-separated local script paths (resolved from vault or theme directory)."
-    ).addText(
-      (text) => text.setPlaceholder("my-plugin.js, utils.js").setValue(this.newSettings.scripts).onChange((value) => {
-        this.newSettings.scripts = value;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Remote scripts").setDesc("Comma-separated external script URLs.").addText(
-      (text) => text.setPlaceholder("https://cdn.example.com/lib.js").setValue(this.newSettings.remoteScripts).onChange((value) => {
-        this.newSettings.remoteScripts = value;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Slides").setHeading();
-    themeSettings.slide = new import_obsidian9.Setting(containerEl).setName("Default slide theme").setDesc(themeDesc("slide", this.newSettings.assetsDirectory)).addSearch((cb) => {
-      const modal = new ThemeInputSuggest(
-        this.app,
-        cb,
-        getThemeFiles(this.plugin.obsidianUtils, "theme")
-      ).onSelect(({ item }) => {
-        cb.setValue(item);
-        cb.inputEl.trigger("input");
-        modal.close();
-      });
-      cb.setPlaceholder("black").setValue(this.newSettings.theme).onChange((value) => {
-        this.newSettings.theme = value;
-      });
-    });
-    themeSettings.highlight = new import_obsidian9.Setting(containerEl).setName("Default highlight theme").setDesc(themeDesc("highlight", this.newSettings.assetsDirectory)).addSearch((cb) => {
-      const modal = new ThemeInputSuggest(
-        this.app,
-        cb,
-        getThemeFiles(this.plugin.obsidianUtils, "highlight")
-      ).onSelect(({ item }) => {
-        cb.setValue(item);
-        cb.inputEl.trigger("input");
-        modal.close();
-      });
-      cb.setPlaceholder("zenburn").setValue(this.newSettings.highlightTheme).onChange((value) => {
-        this.newSettings.highlightTheme = value;
-      });
-    });
-    new import_obsidian9.Setting(containerEl).setName("Center content").setDesc(
-      "When enabled, content is centered on the slide by default."
-    ).addToggle(
-      (value) => value.setValue(this.newSettings.center).onChange((value2) => {
-        this.newSettings.center = value2;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Transition style").setDesc("Select a default slide transition").addDropdown((cb) => {
-      cb.addOption("none", "none").addOption("fade", "fade").addOption("slide", "slide").addOption("convex", "convex").addOption("concave", "concave").addOption("zoom", "zoom").setValue(this.newSettings.transition).onChange((value) => {
-        this.newSettings.transition = value;
-      });
-    });
-    new import_obsidian9.Setting(containerEl).setName("Transition speed").setDesc("Select a default transition speed").addDropdown((cb) => {
-      cb.addOption("slow", "slow").addOption("normal", "default").addOption("fast", "fast").setValue(this.newSettings.transitionSpeed).onChange((value) => {
-        this.newSettings.transitionSpeed = value;
-      });
-    });
-    new import_obsidian9.Setting(containerEl).setName("Default horizontal slide separator").setDesc(
-      "Regex pattern used to split horizontal slides. Default: \\r?\\n---\\r?\\n. Override per-note with the 'separator' property."
-    ).addText(
-      (text) => text.setPlaceholder("\\r?\\n---\\r?\\n").setValue(this.newSettings.separator).onChange((value) => {
-        this.newSettings.separator = value;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Default vertical slide separator").setDesc(
-      "Regex pattern used to split vertical slides. Default: \\r?\\n--\\r?\\n. Override per-note with the 'verticalSeparator' property."
-    ).addText(
-      (text) => text.setPlaceholder("\\r?\\n--\\r?\\n").setValue(this.newSettings.verticalSeparator).onChange((value) => {
-        this.newSettings.verticalSeparator = value;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Presentation Plugins").setHeading().setDesc(
-      "Control presentation plugins. Override per-note using property names (e.g., enableCustomControls)."
-    );
-    new import_obsidian9.Setting(containerEl).setName("Controls").setDesc("Display presentation control arrows.").addButton((btn) => {
-      btn.setButtonText("enableCustomControls").setDisabled(true);
-    }).addToggle(
-      (value) => value.setValue(this.newSettings.controls).onChange((value2) => {
-        this.newSettings.controls = value2;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Chalkboard").setDesc("Display a chalkboard and related controls.").addButton((btn) => {
-      btn.setButtonText("enableChalkboard").setDisabled(true);
-    }).addToggle(
-      (value) => value.setValue(this.newSettings.enableChalkboard).onChange((value2) => {
-        this.newSettings.enableChalkboard = value2;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Elapsed time bar").setDesc(
-      "Display an elapsed time bar; set 'timeForPresentation' property in seconds (500), minutes (55m), or hours (1h)."
-    ).addButton((btn) => {
-      btn.setButtonText("enableTimeBar").setDisabled(true);
-    }).addToggle(
-      (value) => value.setValue(this.newSettings.enableTimeBar).onChange((value2) => {
-        this.newSettings.enableTimeBar = value2;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Laser pointer").setDesc("Change your mouse into a laser pointer (Toggle with Q).").addButton((btn) => {
-      btn.setButtonText("enablePointer").setDisabled(true);
-    }).addToggle(
-      (value) => value.setValue(this.newSettings.enablePointer).onChange((value2) => {
-        this.newSettings.enablePointer = value2;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Menu").setDesc("Display a presentation menu button.").addButton((btn) => {
-      btn.setButtonText("enableMenu").setDisabled(true);
-    }).addToggle(
-      (value) => value.setValue(this.newSettings.enableMenu).onChange((value2) => {
-        this.newSettings.enableMenu = value2;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Overview").setDesc("When enabled, display a presentation overview button.").addButton((btn) => {
-      btn.setButtonText("enableOverview").setDisabled(true);
-    }).addToggle(
-      (value) => value.setValue(this.newSettings.enableOverview).onChange((value2) => {
-        this.newSettings.enableOverview = value2;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Progress bar (progress)").setDesc("When enabled, display a presentation progress bar.").addButton((btn) => {
-      btn.setButtonText("progress").setDisabled(true);
-    }).addToggle(
-      (value) => value.setValue(this.newSettings.progress).onChange((value2) => {
-        this.newSettings.progress = value2;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Slide numbers").setDesc("Display the page number of the current slide.").addButton((btn) => {
-      btn.setButtonText("slideNumber").setDisabled(true);
-    }).addToggle(
-      (value) => value.setValue(this.newSettings.slideNumber).onChange((value2) => {
-        this.newSettings.slideNumber = value2;
-      })
-    );
-    new import_obsidian9.Setting(containerEl).setName("Math Engine").setDesc("Select the math rendering engine.").addDropdown((cb) => {
-      cb.addOption("katex", "KaTeX").addOption("mathjax", "MathJax").setValue(this.newSettings.mathEngine).onChange((value) => {
-        this.newSettings.mathEngine = value;
-      });
-    });
+    const renderer = skeletonMap[templateId];
+    if (renderer) {
+      renderer();
+    } else {
+      container.createDiv({ cls: "us-skel-generic" });
+    }
+  }
+  insertTemplate(template) {
+    const cursor = this.editor.getCursor();
+    this.editor.replaceRange(template.content + "\n", cursor);
+    this.close();
+  }
+  onClose() {
+    const { contentEl } = this;
+    contentEl.empty();
   }
 };
 
 // src/template-inserter/TemplateManager.ts
-var import_obsidian10 = require("obsidian");
+var import_obsidian9 = require("obsidian");
 
 // src/template-inserter/template-content.ts
 var LAYOUT_TEMPLATES = {
@@ -71670,104 +71700,80 @@ note: Speaker notes here`,
 
 ## Two Columns Layout
 
-<grid drag="45 70" drop="5 20" align="topleft">
+columns-2
+### Left Column
 
 Content for left column goes here. Add bullet points, text, or other elements.
 
-</grid>
-
-<grid drag="45 70" drop="52 20" align="topleft">
+### Right Column
 
 Content for right column goes here. Add bullet points, text, or other elements.
-
-</grid>
 
 note: Speaker notes here`,
   "3-columns": `---
 
 ## Three Columns
 
-<grid drag="30 75" drop="2 15" align="topleft">
-
+columns-3
 ### Column 1
 
 First column content
-
-</grid>
-
-<grid drag="30 75" drop="35 15" align="topleft">
 
 ### Column 2
 
 Second column content
 
-</grid>
-
-<grid drag="30 75" drop="68 15" align="topleft">
-
 ### Column 3
 
 Third column content
-
-</grid>
 
 note: Speaker notes here`,
   "grid-2x2": `---
 
 ## Image Grid
 
-<grid drag="48 45" drop="1 5">
+grid-2x2
+### Image 1
+
 ![[image-1.webp]]
-</grid>
 
-<grid drag="48 45" drop="51 5">
+### Image 2
+
 ![[image-2.webp]]
-</grid>
 
-<grid drag="48 45" drop="1 52">
+### Image 3
+
 ![[image-3.webp]]
-</grid>
 
-<grid drag="48 45" drop="51 52">
+### Image 4
+
 ![[image-4.webp]]
-</grid>
 
 note: Speaker notes here`,
-  "timeline": `---
+  timeline: `---
 
 ## Project Timeline
 
-<grid drag="20 70" drop="5 15" align="top">
+timeline
+### Q1 2024
 
-**Q1 2024**
 <!-- element class="fragment" -->
 Research & Planning
 
-</grid>
+### Q2 2024
 
-<grid drag="20 70" drop="27 15" align="top">
-
-**Q2 2024**
 <!-- element class="fragment" -->
 Development Phase
 
-</grid>
+### Q3 2024
 
-<grid drag="20 70" drop="49 15" align="top">
-
-**Q3 2024**
 <!-- element class="fragment" -->
 Testing & QA
 
-</grid>
+### Q4 2024
 
-<grid drag="20 70" drop="71 15" align="top">
-
-**Q4 2024**
 <!-- element class="fragment" -->
 Launch & Deploy
-
-</grid>
 
 note: Speaker notes here`
 };
@@ -71778,7 +71784,7 @@ var STRUCTURE_TEMPLATES = {
 
 # \u{1F4CA} Section Title
 ## Subtitle or description`,
-  "cta": `---
+  cta: `---
 
 <!-- background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) -->
 
@@ -71826,7 +71832,7 @@ var TRADING_TEMPLATES = {
 
 ## GOLD - Key Levels
 
-<grid drag="45 70" drop="5 15" align="topleft">
+<grid drag="45 70" drop="5 20" align="topleft">
 
 \`\`\`
 Resistance 2: 2,450
@@ -71840,7 +71846,7 @@ Support 2:    2,320
 
 </grid>
 
-<grid drag="45 70" drop="52 15" align="topleft">
+<grid drag="45 70" drop="52 20" align="topleft">
 
 <!-- element class="fragment" -->
 \u{1F3AF} **Bias:** Bullish
@@ -71859,7 +71865,7 @@ Support 2:    2,320
 note: Speaker notes here`
 };
 var DATA_TEMPLATES = {
-  "table": `---
+  table: `---
 
 ## Data Table
 
@@ -71874,28 +71880,28 @@ note: Speaker notes here`,
 
 ## Key Statistics
 
-<grid drag="30 40" drop="2 15" align="center" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px;">
+<grid drag="30 40" drop="2 20" align="center" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px;">
 
 # 150%
 **Growth Rate**
 
 </grid>
 
-<grid drag="30 40" drop="35 15" align="center" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px;">
+<grid drag="30 40" drop="35 20" align="center" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px;">
 
 # $2.5M
 **Revenue**
 
 </grid>
 
-<grid drag="30 40" drop="68 15" align="center" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px;">
+<grid drag="30 40" drop="68 20" align="center" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px;">
 
 # 50K+
 **Active Users**
 
 </grid>
 
-<grid drag="90 30" drop="5 60" align="center">
+<grid drag="90 30" drop="5 62" align="center">
 
 <!-- element class="fragment" -->
 > Strong momentum continues into next quarter
@@ -71920,7 +71926,7 @@ note: Speaker notes here`,
 
 ## Performance Dashboard
 
-<grid drag="23 40" drop="1 10" align="center" style="background: rgba(0,255,0,0.1); border-radius: 8px;">
+<grid drag="23 38" drop="1 18" align="center" style="background: rgba(0,255,0,0.1); border-radius: 8px;">
 
 ### \u{1F4C8} +15.2%
 Monthly Return
@@ -71929,7 +71935,7 @@ _\u2191 3.5% vs last month_
 
 </grid>
 
-<grid drag="23 40" drop="26 10" align="center" style="background: rgba(255,255,0,0.1); border-radius: 8px;">
+<grid drag="23 38" drop="26 18" align="center" style="background: rgba(255,255,0,0.1); border-radius: 8px;">
 
 ### \u{1F4B0} $125K
 Total Profit
@@ -71938,7 +71944,7 @@ _\u2191 $25K vs target_
 
 </grid>
 
-<grid drag="23 40" drop="51 10" align="center" style="background: rgba(0,150,255,0.1); border-radius: 8px;">
+<grid drag="23 38" drop="51 18" align="center" style="background: rgba(0,150,255,0.1); border-radius: 8px;">
 
 ### \u{1F4CA} 72%
 Win Rate
@@ -71947,7 +71953,7 @@ _\u2191 5% improvement_
 
 </grid>
 
-<grid drag="23 40" drop="76 10" align="center" style="background: rgba(255,0,255,0.1); border-radius: 8px;">
+<grid drag="23 38" drop="76 18" align="center" style="background: rgba(255,0,255,0.1); border-radius: 8px;">
 
 ### \u{1F3AF} 2.5:1
 Risk/Reward
@@ -71956,7 +71962,7 @@ _Consistent ratio_
 
 </grid>
 
-<grid drag="96 45" drop="2 55" align="topleft">
+<grid drag="96 38" drop="2 58" align="topleft">
 
 <!-- element class="fragment" -->
 > \u{1F4A1} **Insight:** Strong performance driven by improved entry timing
@@ -71983,7 +71989,7 @@ var CONTENT_TEMPLATES = {
 > Remember this key insight!
 
 note: Speaker notes here`,
-  "quote": `---
+  quote: `---
 
 <!-- background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) -->
 
@@ -71998,11 +72004,11 @@ note: Speaker notes here`,
 </grid>
 
 note: Speaker notes here`,
-  "checklist": `---
+  checklist: `---
 
 ## Checklist
 
-<grid drag="45 80" drop="5 12" align="topleft">
+<grid drag="45 70" drop="5 20" align="topleft">
 
 <!-- element class="fragment" -->
 \u2611\uFE0F Check market structure
@@ -72018,7 +72024,7 @@ note: Speaker notes here`,
 
 </grid>
 
-<grid drag="45 80" drop="52 12" align="topleft">
+<grid drag="45 70" drop="52 20" align="topleft">
 
 <!-- element class="fragment" -->
 \u2611\uFE0F Define stop loss
@@ -72057,14 +72063,14 @@ var COMPARISON_TEMPLATES = {
 
 ## Before & After
 
-<grid drag="48 75" drop="1 10">
+<grid drag="48 68" drop="1 20">
 
 ### Before
 ![[before-image.webp]]
 
 </grid>
 
-<grid drag="48 75" drop="51 10">
+<grid drag="48 68" drop="51 20">
 
 ### After
 ![[after-image.webp]]
@@ -72083,7 +72089,7 @@ note: Speaker notes here`,
 
 ## Analysis
 
-<grid drag="45 80" drop="3 12" align="topleft" style="background: rgba(0,255,0,0.05); border-radius: 10px; padding: 15px;">
+<grid drag="45 70" drop="3 20" align="topleft" style="background: rgba(0,255,0,0.05); border-radius: 10px; padding: 15px;">
 
 ### \u{1F7E2} Bullish Factors
 
@@ -72098,7 +72104,7 @@ note: Speaker notes here`,
 
 </grid>
 
-<grid drag="45 80" drop="52 12" align="topleft" style="background: rgba(255,0,0,0.05); border-radius: 10px; padding: 15px;">
+<grid drag="45 70" drop="52 20" align="topleft" style="background: rgba(255,0,0,0.05); border-radius: 10px; padding: 15px;">
 
 ### \u{1F534} Bearish Factors
 
@@ -72157,7 +72163,7 @@ Take action
 note: Speaker notes here`
 };
 var INTERACTIVE_TEMPLATES = {
-  "quiz": `---
+  quiz: `---
 
 ## \u2753 What is the primary trend?
 
@@ -72212,7 +72218,7 @@ note: Speaker notes here`,
 
 ## Embedded Content
 
-<grid drag="90 75" drop="5 15">
+<grid drag="90 70" drop="5 20">
 
 <iframe src="https://example.com/embed" width="100%" height="100%" frameborder="0"></iframe>
 
@@ -72237,7 +72243,7 @@ M\xF4 t\u1EA3 quy tr\xECnh ra quy\u1EBFt \u0111\u1ECBnh ho\u1EB7c lu\u1ED3ng x\u
 </div>
 
 \`\`\`mermaid
-%%{init: {'theme': 'dark', 'themeVariables': {'useMaxWidth': false}, 'flowchart': {'useMaxWidth': false}}}%%
+%%{init: {'theme': 'dark'}}%%
 flowchart TD
     A[Start] --> B{Is it working?}
     B -->|Yes| C[Great!]
@@ -72265,7 +72271,7 @@ T\u1ED5 ch\u1EE9c \xFD t\u01B0\u1EDFng theo c\u1EA5u tr\xFAc ph\xE2n nh\xE1nh t\
 </div>
 
 \`\`\`mermaid
-%%{init: {'theme': 'dark', 'mindmap': {'useMaxWidth': false}}}%%
+%%{init: {'theme': 'dark'}}%%
 mindmap
   root((Main Topic))
     Branch 1
@@ -72287,7 +72293,7 @@ note: Edit the mindmap structure`,
 ## Process Flow
 
 \`\`\`mermaid
-%%{init: {'theme': 'dark', 'sequence': {'useMaxWidth': false, 'actorFontSize': 20, 'messageFontSize': 18}}}%%
+%%{init: {'theme': 'dark'}}%%
 sequenceDiagram
     participant User
     participant System
@@ -72305,7 +72311,7 @@ note: Edit participants and messages`,
 ## Project Timeline
 
 \`\`\`mermaid
-%%{init: {'theme': 'dark', 'themeVariables': {'useMaxWidth': false}}}%%
+%%{init: {'theme': 'dark'}}%%
 timeline
     title Project Milestones
     Q1 2024 : Research phase
@@ -72320,7 +72326,7 @@ note: Edit timeline periods and events`,
 ## Project Schedule
 
 \`\`\`mermaid
-%%{init: {'theme': 'dark', 'gantt': {'useMaxWidth': false, 'barHeight': 40, 'fontSize': 16}}}%%
+%%{init: {'theme': 'dark'}}%%
 gantt
     title Project Plan
     dateFormat YYYY-MM-DD
@@ -72338,7 +72344,7 @@ note: Edit dates and durations`,
 ## Distribution
 
 \`\`\`mermaid
-%%{init: {'theme': 'dark', 'pie': {'useMaxWidth': false, 'textPosition': 0.75}}}%%
+%%{init: {'theme': 'dark'}}%%
 pie showData
     title Market Share
     "Product A" : 40
@@ -72353,7 +72359,7 @@ note: Edit labels and values`,
 ## User Journey
 
 \`\`\`mermaid
-%%{init: {'theme': 'dark', 'themeVariables': {'useMaxWidth': false}}}%%
+%%{init: {'theme': 'dark'}}%%
 journey
     title Customer Experience
     section Discovery
@@ -72370,7 +72376,7 @@ note: Edit steps and satisfaction scores 1-5`,
 ## Analysis Matrix
 
 \`\`\`mermaid
-%%{init: {'theme': 'dark', 'quadrantChart': {'useMaxWidth': false}}}%%
+%%{init: {'theme': 'dark'}}%%
 quadrantChart
     title Priority Matrix
     x-axis Low Effort --> High Effort
@@ -72401,7 +72407,7 @@ M\xF4 t\u1EA3 c\u1EA5u tr\xFAc database v\xE0 quan h\u1EC7 gi\u1EEFa c\xE1c b\u1
 </div>
 
 \`\`\`mermaid
-%%{init: {'theme': 'dark', 'er': {'useMaxWidth': false, 'fontSize': 18}}}%%
+%%{init: {'theme': 'dark'}}%%
 erDiagram
     USER ||--o{ ORDER : places
     ORDER ||--|{ ITEM : contains
@@ -72434,7 +72440,7 @@ Bi\u1EC3u di\u1EC5n c\xE1c tr\u1EA1ng th\xE1i v\xE0 chuy\u1EC3n \u0111\u1ED5i tr
 </div>
 
 \`\`\`mermaid
-%%{init: {'theme': 'dark', 'state': {'useMaxWidth': false, 'fontSize': 18}}}%%
+%%{init: {'theme': 'dark'}}%%
 stateDiagram-v2
     [*] --> Idle
     Idle --> Processing : start
@@ -72462,7 +72468,7 @@ M\xF4 t\u1EA3 c\u1EA5u tr\xFAc v\xE0 quan h\u1EC7 gi\u1EEFa c\xE1c class trong h
 </div>
 
 \`\`\`mermaid
-%%{init: {'theme': 'dark', 'class': {'useMaxWidth': false, 'fontSize': 16}}}%%
+%%{init: {'theme': 'dark'}}%%
 classDiagram
     class Animal {
         +String name
@@ -72495,7 +72501,7 @@ Minh h\u1ECDa l\u1ECBch s\u1EED commit v\xE0 branching strategy.
 </div>
 
 \`\`\`mermaid
-%%{init: {'theme': 'dark', 'themeVariables': {'useMaxWidth': false}}}%%
+%%{init: {'theme': 'dark'}}%%
 gitGraph
     commit id: "init"
     branch feature
@@ -72525,43 +72531,259 @@ var ALL_TEMPLATE_CONTENT = {
 
 // src/template-inserter/TemplateManager.ts
 var BUILT_IN_TEMPLATES = [
-  { id: "text-image-1-3", name: "Text + Image (1/3 + 2/3)", category: "Layout", description: "Text left 30%, image right 65%", icon: "\u{1F4CA}" },
-  { id: "image-overlay-bottom", name: "Image Overlay Bottom", category: "Layout", description: "Full image with title overlay at bottom", icon: "\u{1F5BC}\uFE0F" },
-  { id: "2-columns", name: "2 Columns", category: "Layout", description: "Two equal columns 50/50", icon: "\u25A5" },
-  { id: "3-columns", name: "3 Columns", category: "Layout", description: "Three equal columns", icon: "\u25A4" },
-  { id: "grid-2x2", name: "Grid 2x2", category: "Layout", description: "Four images in a grid", icon: "\u229E" },
-  { id: "section-header", name: "Section Header", category: "Structure", description: "Section title with gradient background", icon: "\u{1F4D1}" },
-  { id: "key-levels", name: "Key Levels", category: "Trading", description: "Support/Resistance with trading setup", icon: "\u{1F4C8}" },
-  { id: "table", name: "Table", category: "Data", description: "4-column data table", icon: "\u{1F4CB}" },
-  { id: "fragment-list", name: "Fragment List", category: "Content", description: "Animated list items", icon: "\u{1F4DD}" },
-  { id: "timeline", name: "Timeline", category: "Layout", description: "4-point horizontal timeline", icon: "\u23F1\uFE0F" },
-  { id: "stats-cards", name: "Stats Cards", category: "Data", description: "3 stats with insight", icon: "\u{1F522}" },
-  { id: "before-after", name: "Before/After", category: "Comparison", description: "Side-by-side comparison", icon: "\u{1F504}" },
-  { id: "pros-cons", name: "Pros/Cons", category: "Comparison", description: "Bull/Bear analysis", icon: "\u2696\uFE0F" },
-  { id: "steps-process", name: "Steps Process", category: "Layout", description: "4-step process flow", icon: "\u{1F522}" },
-  { id: "quiz", name: "Quiz", category: "Interactive", description: "Question with 4 options", icon: "\u2753" },
-  { id: "quote", name: "Quote", category: "Content", description: "Centered quote with author", icon: "\u{1F4AC}" },
-  { id: "video-background", name: "Video Background", category: "Media", description: "Video as slide background", icon: "\u{1F3AC}" },
-  { id: "iframe-embed", name: "Iframe Embed", category: "Media", description: "Embed external content", icon: "\u{1F310}" },
-  { id: "comparison-table", name: "Comparison Table", category: "Data", description: "Compare multiple options", icon: "\u{1F4CA}" },
-  { id: "checklist", name: "Checklist", category: "Content", description: "Animated checkbox list", icon: "\u2611\uFE0F" },
-  { id: "kpi-dashboard", name: "KPI Dashboard", category: "Data", description: "4 KPI cards with insight", icon: "\u{1F4C9}" },
-  { id: "code-highlight", name: "Code Highlight", category: "Content", description: "Code block with line highlighting", icon: "\u{1F4BB}" },
-  { id: "cta", name: "Call to Action", category: "Structure", description: "CTA with button", icon: "\u{1F3AF}" },
-  { id: "thank-you", name: "Thank You", category: "Structure", description: "Closing slide", icon: "\u{1F64F}" },
+  {
+    id: "text-image-1-3",
+    name: "Text + Image (1/3 + 2/3)",
+    category: "Layout",
+    description: "Text left 30%, image right 65%",
+    icon: "\u{1F4CA}"
+  },
+  {
+    id: "image-overlay-bottom",
+    name: "Image Overlay Bottom",
+    category: "Layout",
+    description: "Full image with title overlay at bottom",
+    icon: "\u{1F5BC}\uFE0F"
+  },
+  {
+    id: "2-columns",
+    name: "2 Columns",
+    category: "Layout",
+    description: "Two equal columns 50/50",
+    icon: "\u25A5"
+  },
+  {
+    id: "3-columns",
+    name: "3 Columns",
+    category: "Layout",
+    description: "Three equal columns",
+    icon: "\u25A4"
+  },
+  {
+    id: "grid-2x2",
+    name: "Grid 2x2",
+    category: "Layout",
+    description: "Four images in a grid",
+    icon: "\u229E"
+  },
+  {
+    id: "section-header",
+    name: "Section Header",
+    category: "Structure",
+    description: "Section title with gradient background",
+    icon: "\u{1F4D1}"
+  },
+  {
+    id: "key-levels",
+    name: "Key Levels",
+    category: "Trading",
+    description: "Support/Resistance with trading setup",
+    icon: "\u{1F4C8}"
+  },
+  {
+    id: "table",
+    name: "Table",
+    category: "Data",
+    description: "4-column data table",
+    icon: "\u{1F4CB}"
+  },
+  {
+    id: "fragment-list",
+    name: "Fragment List",
+    category: "Content",
+    description: "Animated list items",
+    icon: "\u{1F4DD}"
+  },
+  {
+    id: "timeline",
+    name: "Timeline",
+    category: "Layout",
+    description: "4-point horizontal timeline",
+    icon: "\u23F1\uFE0F"
+  },
+  {
+    id: "stats-cards",
+    name: "Stats Cards",
+    category: "Data",
+    description: "3 stats with insight",
+    icon: "\u{1F522}"
+  },
+  {
+    id: "before-after",
+    name: "Before/After",
+    category: "Comparison",
+    description: "Side-by-side comparison",
+    icon: "\u{1F504}"
+  },
+  {
+    id: "pros-cons",
+    name: "Pros/Cons",
+    category: "Comparison",
+    description: "Bull/Bear analysis",
+    icon: "\u2696\uFE0F"
+  },
+  {
+    id: "steps-process",
+    name: "Steps Process",
+    category: "Layout",
+    description: "4-step process flow",
+    icon: "\u{1F522}"
+  },
+  {
+    id: "quiz",
+    name: "Quiz",
+    category: "Interactive",
+    description: "Question with 4 options",
+    icon: "\u2753"
+  },
+  {
+    id: "quote",
+    name: "Quote",
+    category: "Content",
+    description: "Centered quote with author",
+    icon: "\u{1F4AC}"
+  },
+  {
+    id: "video-background",
+    name: "Video Background",
+    category: "Media",
+    description: "Video as slide background",
+    icon: "\u{1F3AC}"
+  },
+  {
+    id: "iframe-embed",
+    name: "Iframe Embed",
+    category: "Media",
+    description: "Embed external content",
+    icon: "\u{1F310}"
+  },
+  {
+    id: "comparison-table",
+    name: "Comparison Table",
+    category: "Data",
+    description: "Compare multiple options",
+    icon: "\u{1F4CA}"
+  },
+  {
+    id: "checklist",
+    name: "Checklist",
+    category: "Content",
+    description: "Animated checkbox list",
+    icon: "\u2611\uFE0F"
+  },
+  {
+    id: "kpi-dashboard",
+    name: "KPI Dashboard",
+    category: "Data",
+    description: "4 KPI cards with insight",
+    icon: "\u{1F4C9}"
+  },
+  {
+    id: "code-highlight",
+    name: "Code Highlight",
+    category: "Content",
+    description: "Code block with line highlighting",
+    icon: "\u{1F4BB}"
+  },
+  {
+    id: "cta",
+    name: "Call to Action",
+    category: "Structure",
+    description: "CTA with button",
+    icon: "\u{1F3AF}"
+  },
+  {
+    id: "thank-you",
+    name: "Thank You",
+    category: "Structure",
+    description: "Closing slide",
+    icon: "\u{1F64F}"
+  },
   // Mermaid templates
-  { id: "mermaid-flowchart", name: "Flowchart", category: "Mermaid", description: "Decision tree / flowchart", icon: "\u{1F500}" },
-  { id: "mermaid-mindmap", name: "Mindmap", category: "Mermaid", description: "Mind map diagram", icon: "\u{1F9E0}" },
-  { id: "mermaid-sequence", name: "Sequence", category: "Mermaid", description: "Sequence diagram", icon: "\u2194\uFE0F" },
-  { id: "mermaid-timeline", name: "Timeline", category: "Mermaid", description: "Timeline diagram", icon: "\u{1F4C5}" },
-  { id: "mermaid-gantt", name: "Gantt Chart", category: "Mermaid", description: "Project gantt chart", icon: "\u{1F4CA}" },
-  { id: "mermaid-pie", name: "Pie Chart", category: "Mermaid", description: "Pie chart with data", icon: "\u{1F967}" },
-  { id: "mermaid-journey", name: "User Journey", category: "Mermaid", description: "User journey map", icon: "\u{1F6B6}" },
-  { id: "mermaid-quadrant", name: "Quadrant", category: "Mermaid", description: "Quadrant chart", icon: "\u{1F4D0}" },
-  { id: "mermaid-er", name: "ER Diagram", category: "Mermaid", description: "Entity relationship", icon: "\u{1F5C3}\uFE0F" },
-  { id: "mermaid-state", name: "State Diagram", category: "Mermaid", description: "State machine", icon: "\u{1F504}" },
-  { id: "mermaid-class", name: "Class Diagram", category: "Mermaid", description: "UML class diagram", icon: "\u{1F4E6}" },
-  { id: "mermaid-git", name: "Git Graph", category: "Mermaid", description: "Git branch visualization", icon: "\u{1F33F}" }
+  {
+    id: "mermaid-flowchart",
+    name: "Flowchart",
+    category: "Mermaid",
+    description: "Decision tree / flowchart",
+    icon: "\u{1F500}"
+  },
+  {
+    id: "mermaid-mindmap",
+    name: "Mindmap",
+    category: "Mermaid",
+    description: "Mind map diagram",
+    icon: "\u{1F9E0}"
+  },
+  {
+    id: "mermaid-sequence",
+    name: "Sequence",
+    category: "Mermaid",
+    description: "Sequence diagram",
+    icon: "\u2194\uFE0F"
+  },
+  {
+    id: "mermaid-timeline",
+    name: "Timeline",
+    category: "Mermaid",
+    description: "Timeline diagram",
+    icon: "\u{1F4C5}"
+  },
+  {
+    id: "mermaid-gantt",
+    name: "Gantt Chart",
+    category: "Mermaid",
+    description: "Project gantt chart",
+    icon: "\u{1F4CA}"
+  },
+  {
+    id: "mermaid-pie",
+    name: "Pie Chart",
+    category: "Mermaid",
+    description: "Pie chart with data",
+    icon: "\u{1F967}"
+  },
+  {
+    id: "mermaid-journey",
+    name: "User Journey",
+    category: "Mermaid",
+    description: "User journey map",
+    icon: "\u{1F6B6}"
+  },
+  {
+    id: "mermaid-quadrant",
+    name: "Quadrant",
+    category: "Mermaid",
+    description: "Quadrant chart",
+    icon: "\u{1F4D0}"
+  },
+  {
+    id: "mermaid-er",
+    name: "ER Diagram",
+    category: "Mermaid",
+    description: "Entity relationship",
+    icon: "\u{1F5C3}\uFE0F"
+  },
+  {
+    id: "mermaid-state",
+    name: "State Diagram",
+    category: "Mermaid",
+    description: "State machine",
+    icon: "\u{1F504}"
+  },
+  {
+    id: "mermaid-class",
+    name: "Class Diagram",
+    category: "Mermaid",
+    description: "UML class diagram",
+    icon: "\u{1F4E6}"
+  },
+  {
+    id: "mermaid-git",
+    name: "Git Graph",
+    category: "Mermaid",
+    description: "Git branch visualization",
+    icon: "\u{1F33F}"
+  }
 ];
 var TemplateManager = class {
   plugin;
@@ -72588,11 +72810,11 @@ var TemplateManager = class {
   async loadUserTemplates() {
     const userTemplatePath = this.plugin.settings.userTemplatesFolder;
     if (!userTemplatePath) return;
-    const folder = this.app.vault.getAbstractFileByPath((0, import_obsidian10.normalizePath)(userTemplatePath));
-    if (!folder || folder.constructor.name !== "TFolder") return;
-    const files = this.app.vault.getMarkdownFiles().filter(
-      (f) => f.path.startsWith(userTemplatePath)
+    const folder = this.app.vault.getAbstractFileByPath(
+      (0, import_obsidian9.normalizePath)(userTemplatePath)
     );
+    if (!folder || folder.constructor.name !== "TFolder") return;
+    const files = this.app.vault.getMarkdownFiles().filter((f) => f.path.startsWith(userTemplatePath));
     for (const file of files) {
       const content = await this.app.vault.read(file);
       const id = file.basename.replace("slide-", "");
@@ -72627,245 +72849,392 @@ var TemplateManager = class {
     return this.builtInTemplates.get(id) || this.userTemplates.get(id);
   }
   getBuiltInTemplateContent(id) {
-    return ALL_TEMPLATE_CONTENT[id] || `---
-
-## Slide Title
-
-Content here`;
+    return ALL_TEMPLATE_CONTENT[id] || "---\n\n## Slide Title\n\nContent here";
   }
 };
 
-// src/template-inserter/TemplateInserterModal.ts
-var import_obsidian11 = require("obsidian");
-var TemplateInserterModal = class extends import_obsidian11.Modal {
-  templateManager;
-  editor;
-  selectedCategory = "All";
-  searchQuery = "";
-  constructor(app, templateManager, editor) {
-    super(app);
-    this.templateManager = templateManager;
-    this.editor = editor;
+// src/ultimateSlides-Distribution.ts
+var import_node_fs2 = require("node:fs");
+var import_node_path7 = __toESM(require("node:path"));
+var import_jszip = __toESM(require_lib5());
+var import_obsidian10 = require("obsidian");
+var UltimateSlidesDistribution = class {
+  plugin;
+  pluginDirectory;
+  distDirectory;
+  constructor(plugin) {
+    this.plugin = plugin;
+    this.pluginDirectory = this.plugin.obsidianUtils.pluginDirectory;
+    this.distDirectory = this.plugin.obsidianUtils.distDirectory;
   }
-  onOpen() {
-    const { contentEl, modalEl } = this;
-    contentEl.empty();
-    modalEl.addClass("ultimate-slides-template-modal");
-    const header = contentEl.createDiv({ cls: "us-modal-header" });
-    header.createEl("h2", { text: "\u{1F4CA} Insert Slide Template" });
-    const searchContainer = contentEl.createDiv({ cls: "us-search-container" });
-    const searchInput = searchContainer.createEl("input", {
-      type: "text",
-      placeholder: "Search templates...",
-      cls: "us-search-input"
-    });
-    searchInput.addEventListener("input", (e) => {
-      this.searchQuery = e.target.value.toLowerCase();
-      this.renderTemplates(templateGrid);
-    });
-    const tabsContainer = contentEl.createDiv({ cls: "us-tabs-container" });
-    const categories = ["All", ...this.templateManager.getCategories()];
-    for (const category of categories) {
-      const tab = tabsContainer.createEl("button", {
-        text: category,
-        cls: `us-tab ${category === this.selectedCategory ? "us-tab-active" : ""}`
-      });
-      tab.addEventListener("click", () => {
-        this.selectedCategory = category;
-        tabsContainer.querySelectorAll(".us-tab").forEach((t) => t.removeClass("us-tab-active"));
-        tab.addClass("us-tab-active");
-        this.renderTemplates(templateGrid);
-      });
-    }
-    const templateGrid = contentEl.createDiv({ cls: "us-template-grid" });
-    this.renderTemplates(templateGrid);
+  isOutdated() {
+    return false;
   }
-  renderTemplates(container) {
-    container.empty();
-    let templates = this.templateManager.getAllTemplates();
-    if (this.selectedCategory !== "All") {
-      templates = templates.filter((t) => t.category === this.selectedCategory);
-    }
-    if (this.searchQuery) {
-      templates = templates.filter(
-        (t) => t.name.toLowerCase().includes(this.searchQuery) || t.description.toLowerCase().includes(this.searchQuery)
-      );
-    }
-    if (templates.length === 0) {
-      container.createEl("p", { text: "No templates found", cls: "us-no-results" });
-      return;
-    }
-    for (const template of templates) {
-      const card = container.createDiv({ cls: "us-template-card" });
-      const preview = card.createDiv({ cls: "us-template-preview" });
-      this.renderPreviewSkeleton(preview, template.id);
-      const info = card.createDiv({ cls: "us-template-info" });
-      info.createEl("span", { text: template.icon, cls: "us-template-icon" });
-      info.createEl("span", { text: template.name, cls: "us-template-name" });
-      const badge = card.createDiv({ cls: "us-template-badge" });
-      badge.createEl("span", { text: template.category });
-      card.addEventListener("click", () => {
-        this.insertTemplate(template);
-      });
-      card.setAttribute("title", template.description);
-    }
+  isOldVersion() {
+    return false;
   }
-  renderPreviewSkeleton(container, templateId) {
-    const skeletonMap = {
-      "text-image-1-3": () => {
-        const left = container.createDiv({ cls: "us-skel-col us-skel-30" });
-        left.createDiv({ cls: "us-skel-title" });
-        left.createDiv({ cls: "us-skel-line" });
-        left.createDiv({ cls: "us-skel-line us-skel-short" });
-        container.createDiv({ cls: "us-skel-col us-skel-65 us-skel-image" });
-      },
-      "image-overlay-bottom": () => {
-        container.createDiv({ cls: "us-skel-image us-skel-full" });
-        const overlay = container.createDiv({ cls: "us-skel-overlay-bottom" });
-        overlay.createDiv({ cls: "us-skel-title" });
-      },
-      "2-columns": () => {
-        container.createDiv({ cls: "us-skel-col us-skel-45" }).createDiv({ cls: "us-skel-lines" });
-        container.createDiv({ cls: "us-skel-col us-skel-45" }).createDiv({ cls: "us-skel-lines" });
-      },
-      "3-columns": () => {
-        for (let i = 0; i < 3; i++) {
-          container.createDiv({ cls: "us-skel-col us-skel-30" }).createDiv({ cls: "us-skel-lines" });
-        }
-      },
-      "grid-2x2": () => {
-        container.addClass("us-skel-grid-2x2");
-        for (let i = 0; i < 4; i++) {
-          container.createDiv({ cls: "us-skel-grid-item us-skel-image" });
-        }
-      },
-      "section-header": () => {
-        container.addClass("us-skel-centered");
-        container.createDiv({ cls: "us-skel-title us-skel-large" });
-        container.createDiv({ cls: "us-skel-subtitle" });
-      },
-      "key-levels": () => {
-        container.createDiv({ cls: "us-skel-col us-skel-45 us-skel-code" });
-        const right = container.createDiv({ cls: "us-skel-col us-skel-45" });
-        for (let i = 0; i < 4; i++) {
-          right.createDiv({ cls: "us-skel-line us-skel-short" });
-        }
-      },
-      "table": () => {
-        container.addClass("us-skel-centered");
-        container.createDiv({ cls: "us-skel-title" });
-        container.createDiv({ cls: "us-skel-table" });
-      },
-      "fragment-list": () => {
-        container.addClass("us-skel-centered");
-        container.createDiv({ cls: "us-skel-title" });
-        for (let i = 0; i < 3; i++) {
-          container.createDiv({ cls: "us-skel-line" });
-        }
-      },
-      "timeline": () => {
-        container.addClass("us-skel-timeline");
-        for (let i = 0; i < 4; i++) {
-          const item = container.createDiv({ cls: "us-skel-timeline-item" });
-          item.createDiv({ cls: "us-skel-dot" });
-          item.createDiv({ cls: "us-skel-line us-skel-short" });
-        }
-      },
-      "stats-cards": () => {
-        container.addClass("us-skel-cards-row");
-        for (let i = 0; i < 3; i++) {
-          const card = container.createDiv({ cls: "us-skel-stat-card" });
-          card.createDiv({ cls: "us-skel-stat-num" });
-          card.createDiv({ cls: "us-skel-line us-skel-short" });
-        }
-      },
-      "before-after": () => {
-        container.createDiv({ cls: "us-skel-col us-skel-45 us-skel-image" });
-        container.createDiv({ cls: "us-skel-col us-skel-45 us-skel-image" });
-      },
-      "pros-cons": () => {
-        const left = container.createDiv({ cls: "us-skel-col us-skel-45 us-skel-green" });
-        left.createDiv({ cls: "us-skel-lines" });
-        const right = container.createDiv({ cls: "us-skel-col us-skel-45 us-skel-red" });
-        right.createDiv({ cls: "us-skel-lines" });
-      },
-      "steps-process": () => {
-        container.addClass("us-skel-steps");
-        for (let i = 0; i < 4; i++) {
-          const step = container.createDiv({ cls: "us-skel-step" });
-          step.createDiv({ cls: "us-skel-step-num", text: String(i + 1) });
-          step.createDiv({ cls: "us-skel-line us-skel-short" });
-        }
-      },
-      "quiz": () => {
-        container.addClass("us-skel-quiz");
-        container.createDiv({ cls: "us-skel-title" });
-        const options = container.createDiv({ cls: "us-skel-quiz-options" });
-        for (let i = 0; i < 4; i++) {
-          options.createDiv({ cls: "us-skel-quiz-option" });
-        }
-      },
-      "quote": () => {
-        container.addClass("us-skel-centered");
-        container.createDiv({ cls: "us-skel-quote-mark", text: '"' });
-        container.createDiv({ cls: "us-skel-line" });
-        container.createDiv({ cls: "us-skel-line us-skel-short" });
-      },
-      "video-background": () => {
-        container.addClass("us-skel-video");
-        container.createDiv({ cls: "us-skel-play-btn", text: "\u25B6" });
-      },
-      "iframe-embed": () => {
-        container.addClass("us-skel-centered");
-        container.createDiv({ cls: "us-skel-title" });
-        container.createDiv({ cls: "us-skel-iframe" });
-      },
-      "comparison-table": () => {
-        container.addClass("us-skel-centered");
-        container.createDiv({ cls: "us-skel-title" });
-        container.createDiv({ cls: "us-skel-table us-skel-table-wide" });
-      },
-      "checklist": () => {
-        container.createDiv({ cls: "us-skel-col us-skel-45 us-skel-checklist" });
-        container.createDiv({ cls: "us-skel-col us-skel-45 us-skel-checklist" });
-      },
-      "kpi-dashboard": () => {
-        container.addClass("us-skel-cards-row");
-        for (let i = 0; i < 4; i++) {
-          container.createDiv({ cls: "us-skel-kpi-card" });
-        }
-      },
-      "code-highlight": () => {
-        container.addClass("us-skel-centered");
-        container.createDiv({ cls: "us-skel-title" });
-        container.createDiv({ cls: "us-skel-code us-skel-code-block" });
-      },
-      "cta": () => {
-        container.addClass("us-skel-centered us-skel-gradient");
-        container.createDiv({ cls: "us-skel-title us-skel-large" });
-        container.createDiv({ cls: "us-skel-button" });
-      },
-      "thank-you": () => {
-        container.addClass("us-skel-centered us-skel-gradient");
-        container.createDiv({ cls: "us-skel-title us-skel-large" });
-        container.createDiv({ cls: "us-skel-table us-skel-small" });
+  async update() {
+    if ((0, import_node_fs2.existsSync)(this.distDirectory)) {
+      const revealJs = import_node_path7.default.join(this.distDirectory, "reveal.js");
+      if ((0, import_node_fs2.existsSync)(revealJs)) {
+        console.log(
+          "Ultimate Slides: All assets already present, skipping download."
+        );
+        return;
       }
-    };
-    const renderer = skeletonMap[templateId];
-    if (renderer) {
-      renderer();
-    } else {
-      container.createDiv({ cls: "us-skel-generic" });
+    }
+    const version = this.plugin.manifest.version;
+    const downloadUrl = `https://github.com/ebullient/obsidian-slides-extended/releases/download/${version}/slides-extended.zip`;
+    const backupDir = import_node_path7.default.join(this.pluginDirectory, "dist-backup");
+    let didBackup = false;
+    if ((0, import_node_fs2.existsSync)(this.distDirectory)) {
+      console.debug(
+        "Backing up existing distribution files before update"
+      );
+      if ((0, import_node_fs2.existsSync)(backupDir)) {
+        (0, import_node_fs2.rmSync)(backupDir, { recursive: true, force: true });
+      }
+      (0, import_node_fs2.renameSync)(this.distDirectory, backupDir);
+      didBackup = true;
+    }
+    try {
+      const response = await (0, import_obsidian10.requestUrl)(downloadUrl);
+      if (response.status !== 200) {
+        throw new Error(
+          `Failed to download ${downloadUrl}: HTTP ${response.status}`
+        );
+      }
+      const zip = new import_jszip.default();
+      const contents = await zip.loadAsync(response.arrayBuffer);
+      const pluginDirectory = this.pluginDirectory;
+      for (const filename of Object.keys(contents.files)) {
+        if (!contents.files[filename].dir) {
+          zip.file(filename).async("nodebuffer").then((content) => {
+            const dest = import_node_path7.default.join(pluginDirectory, filename);
+            const dir = import_node_path7.default.dirname(dest);
+            (0, import_node_fs2.mkdirSync)(dir, { recursive: true });
+            (0, import_node_fs2.writeFileSync)(dest, content);
+          });
+        }
+      }
+      if (didBackup && (0, import_node_fs2.existsSync)(backupDir)) {
+        console.debug("Update successful, removing backup");
+        (0, import_node_fs2.rmSync)(backupDir, { recursive: true, force: true });
+      }
+    } catch (error) {
+      console.error("Failed to update distribution files:", error);
+      if (didBackup && (0, import_node_fs2.existsSync)(backupDir)) {
+        console.debug("Restoring backup due to update failure");
+        if ((0, import_node_fs2.existsSync)(this.distDirectory)) {
+          (0, import_node_fs2.rmSync)(this.distDirectory, {
+            recursive: true,
+            force: true
+          });
+        }
+        (0, import_node_fs2.renameSync)(backupDir, this.distDirectory);
+      }
+      throw error;
     }
   }
-  insertTemplate(template) {
-    const cursor = this.editor.getCursor();
-    this.editor.replaceRange(template.content + "\n", cursor);
-    this.close();
+};
+
+// src/ultimateSlides-SettingTab.ts
+var import_obsidian11 = require("obsidian");
+var import_obsidian_utilities2 = __toESM(require_main());
+
+// src/obsidian/suggesters/ThemeSuggester.ts
+var import_node_fs3 = __toESM(require("node:fs"));
+var import_obsidian_utilities = __toESM(require_main());
+var highlightCss = (path6, basename3) => {
+  return path6.contains("highlight") || basename3.contains("highlight") || basename3.contains("hljs");
+};
+var themeCss = (path6, basename3) => !highlightCss(path6, basename3);
+var getFiles = (directories, include) => {
+  const result = /* @__PURE__ */ new Set();
+  for (const directory of directories) {
+    if (!import_node_fs3.default.existsSync(directory)) {
+      continue;
+    }
+    for (const file of import_node_fs3.default.readdirSync(directory)) {
+      if (include(directory, file)) {
+        result.add(file);
+      }
+    }
   }
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
+  return result;
+};
+var getThemeFiles = (utils, type2) => {
+  const searchPath = type2 === "highlight" ? utils.getHighlightSearchPath() : utils.getThemeSearchPath();
+  return [
+    ...getFiles(searchPath, (path6, basename3) => {
+      if (basename3.endsWith(".css")) {
+        return type2 === "highlight" ? highlightCss(path6, basename3) : themeCss(path6, basename3);
+      }
+      return false;
+    })
+  ];
+};
+var ThemeInputSuggest = class extends import_obsidian_utilities.FuzzyInputSuggest {
+  getItemText(item) {
+    return item;
+  }
+  renderNote(_noteEL, _result) {
+  }
+  renderTitle(titleEl, result) {
+    this.renderMatches(titleEl, result.item, result.match.matches);
+  }
+};
+
+// src/ultimateSlides-SettingTab.ts
+function isFolder(file) {
+  return file instanceof import_obsidian11.TFolder;
+}
+var UltimateSlidesSettingTab = class extends import_obsidian11.PluginSettingTab {
+  plugin;
+  newSettings;
+  constructor(app, plugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+  async save() {
+    await this.plugin.update(this.newSettings);
+  }
+  /** Save on exit */
+  hide() {
+    this.save();
+  }
+  /** Show/validate setting changes */
+  display() {
+    this.newSettings = JSON.parse(JSON.stringify(this.plugin.settings));
+    this.drawElements();
+  }
+  drawElements() {
+    const { containerEl } = this;
+    containerEl.empty();
+    new import_obsidian11.Setting(containerEl).setName("Slide preview mode").setDesc("Select the slide preview pane display mode.").addDropdown((cb) => {
+      cb.addOption("tab", "as Tab").addOption("split", "split Workspace").addOption("sidebar", "right sidebar").setValue(this.newSettings.paneMode).onChange((value) => {
+        if (value === "tab" || value === "split" || value === "sidebar") {
+          this.newSettings.paneMode = value;
+        } else {
+          console.debug("Invalid pane mode", value);
+        }
+      });
+    });
+    new import_obsidian11.Setting(containerEl).setName("Automatically start server").setDesc(
+      "When enabled, the server for rendering slides will automatically start when Obsidian starts."
+    ).addToggle(
+      (value) => value.setValue(this.newSettings.autoStart).onChange((value2) => {
+        this.newSettings.autoStart = value2;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Server port").setDesc(
+      "Specify the port number for the server to listen on. Default is 3000."
+    ).addText(
+      (text) => text.setPlaceholder("3000").setValue(this.newSettings.port).onChange((value) => {
+        this.newSettings.port = value;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Server host").setDesc(
+      "Specify the host for the server to listen on. Default is localhost. Use 0.0.0.0 to allow external connections."
+    ).addText(
+      (text) => text.setPlaceholder("localhost").setValue(this.newSettings.host).onChange((value) => {
+        this.newSettings.host = value;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Auto reload").setDesc(
+      "When enabled, the slide preview window automatically updates upon detecting changes in the source file."
+    ).addToggle(
+      (value) => value.setValue(this.newSettings.autoReload).onChange((value2) => {
+        this.newSettings.autoReload = value2;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Auto complete").setDesc(
+      'Enable auto-complete inputs. "Always" enables it everywhere, "When slide preview is active" enables it only when the slide preview is active, and "Never" disables it.'
+    ).addDropdown((cb) => {
+      cb.addOption("always", "Always").addOption("inPreview", "When slide preview is active").addOption("never", "Never").setValue(this.newSettings.autoComplete).onChange((value) => {
+        this.newSettings.autoComplete = value;
+      });
+    });
+    new import_obsidian11.Setting(containerEl).setName("Export directory").setDesc(
+      "Specify the directory where Ultimate Slides should export presentations."
+    ).addSearch((cb) => {
+      const folders = this.app.vault.getAllLoadedFiles().filter(isFolder);
+      const modal = new import_obsidian_utilities2.FolderInputSuggest(this.app, cb, folders);
+      modal.onSelect(({ item }) => {
+        cb.setValue(item.path);
+        cb.inputEl.trigger("input");
+        modal.close();
+      });
+      cb.setPlaceholder("Folder").setValue(this.newSettings.exportDirectory).onChange((value) => {
+        this.newSettings.exportDirectory = value;
+      });
+    });
+    const themeSettings = {};
+    const themeDesc = (type2, assets) => {
+      const desc = type2 === "slide" ? "*" : "*.highlight.css or *.hljs.css";
+      if (assets) {
+        return `Select the default ${desc} theme. Options include ${type2}.css files defined in ${assets}.`;
+      }
+      return `Select the default ${desc} theme.`;
+    };
+    new import_obsidian11.Setting(containerEl).setName("Assets directory").setDesc(
+      "Specify a vault directory for custom themes, CSS, scripts, and HTML templates. CSS files are searched in css/ and the directory root. Scripts are searched in js/. HTML templates in html/."
+    ).addSearch((cb) => {
+      const folders = this.app.vault.getAllLoadedFiles().filter(isFolder);
+      const modal = new import_obsidian_utilities2.FolderInputSuggest(this.app, cb, folders);
+      modal.onSelect(({ item }) => {
+        cb.setValue(item.path);
+        cb.inputEl.trigger("input");
+        modal.close();
+      });
+      cb.setPlaceholder("Folder").setValue(this.newSettings.assetsDirectory).onChange((value) => {
+        this.newSettings.assetsDirectory = value;
+        for (const key in themeSettings) {
+          themeSettings[key].setDesc(themeDesc(key, value));
+        }
+      });
+    });
+    new import_obsidian11.Setting(containerEl).setName("Custom scripts").setHeading().setDesc(
+      "Load additional scripts into all presentations. Override per-note using property names."
+    );
+    new import_obsidian11.Setting(containerEl).setName("Scripts").setDesc(
+      "Comma-separated local script paths (resolved from vault or theme directory)."
+    ).addText(
+      (text) => text.setPlaceholder("my-plugin.js, utils.js").setValue(this.newSettings.scripts).onChange((value) => {
+        this.newSettings.scripts = value;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Remote scripts").setDesc("Comma-separated external script URLs.").addText(
+      (text) => text.setPlaceholder("https://cdn.example.com/lib.js").setValue(this.newSettings.remoteScripts).onChange((value) => {
+        this.newSettings.remoteScripts = value;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Slides").setHeading();
+    themeSettings.slide = new import_obsidian11.Setting(containerEl).setName("Default slide theme").setDesc(themeDesc("slide", this.newSettings.assetsDirectory)).addSearch((cb) => {
+      const modal = new ThemeInputSuggest(
+        this.app,
+        cb,
+        getThemeFiles(this.plugin.obsidianUtils, "theme")
+      ).onSelect(({ item }) => {
+        cb.setValue(item);
+        cb.inputEl.trigger("input");
+        modal.close();
+      });
+      cb.setPlaceholder("black").setValue(this.newSettings.theme).onChange((value) => {
+        this.newSettings.theme = value;
+      });
+    });
+    themeSettings.highlight = new import_obsidian11.Setting(containerEl).setName("Default highlight theme").setDesc(themeDesc("highlight", this.newSettings.assetsDirectory)).addSearch((cb) => {
+      const modal = new ThemeInputSuggest(
+        this.app,
+        cb,
+        getThemeFiles(this.plugin.obsidianUtils, "highlight")
+      ).onSelect(({ item }) => {
+        cb.setValue(item);
+        cb.inputEl.trigger("input");
+        modal.close();
+      });
+      cb.setPlaceholder("zenburn").setValue(this.newSettings.highlightTheme).onChange((value) => {
+        this.newSettings.highlightTheme = value;
+      });
+    });
+    new import_obsidian11.Setting(containerEl).setName("Center content").setDesc(
+      "When enabled, content is centered on the slide by default."
+    ).addToggle(
+      (value) => value.setValue(this.newSettings.center).onChange((value2) => {
+        this.newSettings.center = value2;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Transition style").setDesc("Select a default slide transition").addDropdown((cb) => {
+      cb.addOption("none", "none").addOption("fade", "fade").addOption("slide", "slide").addOption("convex", "convex").addOption("concave", "concave").addOption("zoom", "zoom").setValue(this.newSettings.transition).onChange((value) => {
+        this.newSettings.transition = value;
+      });
+    });
+    new import_obsidian11.Setting(containerEl).setName("Transition speed").setDesc("Select a default transition speed").addDropdown((cb) => {
+      cb.addOption("slow", "slow").addOption("normal", "default").addOption("fast", "fast").setValue(this.newSettings.transitionSpeed).onChange((value) => {
+        this.newSettings.transitionSpeed = value;
+      });
+    });
+    new import_obsidian11.Setting(containerEl).setName("Default horizontal slide separator").setDesc(
+      "Regex pattern used to split horizontal slides. Default: \\r?\\n---\\r?\\n. Override per-note with the 'separator' property."
+    ).addText(
+      (text) => text.setPlaceholder("\\r?\\n---\\r?\\n").setValue(this.newSettings.separator).onChange((value) => {
+        this.newSettings.separator = value;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Default vertical slide separator").setDesc(
+      "Regex pattern used to split vertical slides. Default: \\r?\\n--\\r?\\n. Override per-note with the 'verticalSeparator' property."
+    ).addText(
+      (text) => text.setPlaceholder("\\r?\\n--\\r?\\n").setValue(this.newSettings.verticalSeparator).onChange((value) => {
+        this.newSettings.verticalSeparator = value;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Presentation Plugins").setHeading().setDesc(
+      "Control presentation plugins. Override per-note using property names (e.g., enableCustomControls)."
+    );
+    new import_obsidian11.Setting(containerEl).setName("Controls").setDesc("Display presentation control arrows.").addButton((btn) => {
+      btn.setButtonText("enableCustomControls").setDisabled(true);
+    }).addToggle(
+      (value) => value.setValue(this.newSettings.controls).onChange((value2) => {
+        this.newSettings.controls = value2;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Chalkboard").setDesc("Display a chalkboard and related controls.").addButton((btn) => {
+      btn.setButtonText("enableChalkboard").setDisabled(true);
+    }).addToggle(
+      (value) => value.setValue(this.newSettings.enableChalkboard).onChange((value2) => {
+        this.newSettings.enableChalkboard = value2;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Elapsed time bar").setDesc(
+      "Display an elapsed time bar; set 'timeForPresentation' property in seconds (500), minutes (55m), or hours (1h)."
+    ).addButton((btn) => {
+      btn.setButtonText("enableTimeBar").setDisabled(true);
+    }).addToggle(
+      (value) => value.setValue(this.newSettings.enableTimeBar).onChange((value2) => {
+        this.newSettings.enableTimeBar = value2;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Laser pointer").setDesc("Change your mouse into a laser pointer (Toggle with Q).").addButton((btn) => {
+      btn.setButtonText("enablePointer").setDisabled(true);
+    }).addToggle(
+      (value) => value.setValue(this.newSettings.enablePointer).onChange((value2) => {
+        this.newSettings.enablePointer = value2;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Menu").setDesc("Display a presentation menu button.").addButton((btn) => {
+      btn.setButtonText("enableMenu").setDisabled(true);
+    }).addToggle(
+      (value) => value.setValue(this.newSettings.enableMenu).onChange((value2) => {
+        this.newSettings.enableMenu = value2;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Overview").setDesc("When enabled, display a presentation overview button.").addButton((btn) => {
+      btn.setButtonText("enableOverview").setDisabled(true);
+    }).addToggle(
+      (value) => value.setValue(this.newSettings.enableOverview).onChange((value2) => {
+        this.newSettings.enableOverview = value2;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Progress bar (progress)").setDesc("When enabled, display a presentation progress bar.").addButton((btn) => {
+      btn.setButtonText("progress").setDisabled(true);
+    }).addToggle(
+      (value) => value.setValue(this.newSettings.progress).onChange((value2) => {
+        this.newSettings.progress = value2;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Slide numbers").setDesc("Display the page number of the current slide.").addButton((btn) => {
+      btn.setButtonText("slideNumber").setDisabled(true);
+    }).addToggle(
+      (value) => value.setValue(this.newSettings.slideNumber).onChange((value2) => {
+        this.newSettings.slideNumber = value2;
+      })
+    );
+    new import_obsidian11.Setting(containerEl).setName("Math Engine").setDesc("Select the math rendering engine.").addDropdown((cb) => {
+      cb.addOption("katex", "KaTeX").addOption("mathjax", "MathJax").setValue(this.newSettings.mathEngine).onChange((value) => {
+        this.newSettings.mathEngine = value;
+      });
+    });
   }
 };
 
@@ -72967,7 +73336,11 @@ var UltimateSlidesPlugin = class extends import_obsidian12.Plugin {
       id: "insert-slide-template",
       name: "Insert slide template",
       editorCallback: (editor) => {
-        new TemplateInserterModal(this.app, this.templateManager, editor).open();
+        new TemplateInserterModal(
+          this.app,
+          this.templateManager,
+          editor
+        ).open();
       }
     });
     this.addSettingTab(new UltimateSlidesSettingTab(this.app, this));
@@ -72984,7 +73357,11 @@ var UltimateSlidesPlugin = class extends import_obsidian12.Plugin {
   openTemplateInserter() {
     const view = this.app.workspace.getActiveViewOfType(import_obsidian12.MarkdownView);
     if (view) {
-      new TemplateInserterModal(this.app, this.templateManager, view.editor).open();
+      new TemplateInserterModal(
+        this.app,
+        this.templateManager,
+        view.editor
+      ).open();
     }
   }
   get url() {

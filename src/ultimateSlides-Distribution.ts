@@ -38,7 +38,9 @@ export class UltimateSlidesDistribution {
         if (existsSync(this.distDirectory)) {
             const revealJs = path.join(this.distDirectory, "reveal.js");
             if (existsSync(revealJs)) {
-                console.log("Ultimate Slides: All assets already present, skipping download.");
+                console.log(
+                    "Ultimate Slides: All assets already present, skipping download.",
+                );
                 return;
             }
         }
