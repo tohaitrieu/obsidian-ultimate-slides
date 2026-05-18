@@ -14,6 +14,21 @@ export interface SlideTemplate {
 // Built-in template definitions
 const BUILT_IN_TEMPLATES: Omit<SlideTemplate, "content">[] = [
     {
+        id: "presentation-starter",
+        name: "Full Presentation",
+        category: "Starter",
+        description:
+            "Complete presentation with frontmatter, agenda, and slides",
+        icon: "🚀",
+    },
+    {
+        id: "slide-with-frontmatter",
+        name: "Slide with Frontmatter",
+        category: "Starter",
+        description: "Single slide with full frontmatter configuration",
+        icon: "📄",
+    },
+    {
         id: "text-image-1-3",
         name: "Text + Image (1/3 + 2/3)",
         category: "Layout",

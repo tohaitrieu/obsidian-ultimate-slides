@@ -1,5 +1,84 @@
 // Template content strings - separated for better maintainability
 
+export const STARTER_TEMPLATES: Record<string, string> = {
+    "presentation-starter": `---
+theme: black
+highlightTheme: zenburn
+width: 1920
+height: 1080
+margin: 0.04
+transition: fade
+transitionSpeed: default
+controls: true
+progress: true
+slideNumber: true
+center: true
+enableMenu: true
+enableOverview: true
+---
+
+# Presentation Title
+
+## Your Subtitle Here
+
+**Author Name** | Date
+
+note: Welcome slide - introduce yourself
+
+---
+
+## Agenda
+
+<!-- element class="fragment" -->
+1. First Topic
+
+<!-- element class="fragment" -->
+2. Second Topic
+
+<!-- element class="fragment" -->
+3. Third Topic
+
+note: Overview of what will be covered
+
+---
+
+## First Slide
+
+Your content here
+
+note: Speaker notes
+
+---
+
+## Thank You
+
+### Questions?
+
+**Contact:** your@email.com
+
+note: Closing slide`,
+
+    "slide-with-frontmatter": `---
+theme: black
+highlightTheme: zenburn
+width: 1920
+height: 1080
+margin: 0.04
+transition: fade
+transitionSpeed: default
+controls: true
+progress: true
+slideNumber: true
+center: true
+enableMenu: true
+enableOverview: true
+---
+
+# Your Title Here
+
+note: Add your speaker notes here`,
+};
+
 export const LAYOUT_TEMPLATES: Record<string, string> = {
     "text-image-1-3": `---
 
@@ -893,6 +972,7 @@ note: Edit commits and branches`,
 
 // Combine all templates
 export const ALL_TEMPLATE_CONTENT: Record<string, string> = {
+    ...STARTER_TEMPLATES,
     ...LAYOUT_TEMPLATES,
     ...STRUCTURE_TEMPLATES,
     ...TRADING_TEMPLATES,
