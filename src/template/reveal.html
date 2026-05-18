@@ -612,35 +612,52 @@
           });
         });
 
+        // Get all slides including vertical (nested) slides
+        function getAllSlides() {
+          const allSlides = [];
+          const hSections = document.querySelectorAll('.reveal .slides > section');
+          hSections.forEach((hSection, h) => {
+            const vSections = hSection.querySelectorAll(':scope > section');
+            if (vSections.length > 0) {
+              vSections.forEach((vSection, v) => {
+                allSlides.push({ el: vSection, h, v, isVertical: true });
+              });
+            } else {
+              allSlides.push({ el: hSection, h, v: 0, isVertical: false });
+            }
+          });
+          return allSlides;
+        }
+
         function buildThumbnails() {
           thumbList.innerHTML = '';
-          const slidesContainer = document.querySelector('.reveal .slides');
-          const slides = document.querySelectorAll('.reveal .slides > section');
-          const current = Reveal.getState().indexh;
+          const allSlides = getAllSlides();
+          const state = Reveal.getState();
 
-          // Get actual slide dimensions from Reveal config
           const config = Reveal.getConfig();
           const slideWidth = config.width || 960;
           const slideHeight = config.height || 700;
 
-          // Thumbnail container width (panel - padding)
           const thumbWidth = panelWidth - 36;
           const thumbHeight = thumbWidth * (slideHeight / slideWidth);
           const scale = thumbWidth / slideWidth;
 
-          slides.forEach((slide, index) => {
+          allSlides.forEach((slideInfo, index) => {
+            const { el: slide, h, v, isVertical } = slideInfo;
+            const isActive = state.indexh === h && state.indexv === v;
+
             const item = document.createElement('div');
-            item.className = 'slide-thumb-item' + (index === current ? ' active' : '');
+            item.className = 'slide-thumb-item' + (isActive ? ' active' : '');
+            item.dataset.h = h;
+            item.dataset.v = v;
 
-            const h = slide.querySelector('h1, h2, h3');
-            const title = h ? h.textContent.trim() : `Slide ${index + 1}`;
+            const heading = slide.querySelector('h1, h2, h3');
+            const title = heading ? heading.textContent.trim() : `Slide ${index + 1}`;
 
-            // Create preview container
             const preview = document.createElement('div');
             preview.className = 'slide-thumb-preview';
             preview.style.height = thumbHeight + 'px';
 
-            // Create mini reveal wrapper to inherit all CSS
             const revealMini = document.createElement('div');
             revealMini.className = 'reveal reveal-mini';
             revealMini.style.width = slideWidth + 'px';
@@ -652,12 +669,9 @@
             slidesWrapper.style.width = slideWidth + 'px';
             slidesWrapper.style.height = slideHeight + 'px';
 
-            // Clone the actual slide with full content
             const clone = slide.cloneNode(true);
             clone.style.width = slideWidth + 'px';
             clone.style.height = slideHeight + 'px';
-
-            // Remove scripts
             clone.querySelectorAll('script').forEach(el => el.remove());
 
             slidesWrapper.appendChild(clone);
@@ -666,7 +680,7 @@
 
             const num = document.createElement('div');
             num.className = 'slide-thumb-num';
-            num.textContent = index + 1;
+            num.textContent = isVertical ? `${h + 1}.${v + 1}` : `${index + 1}`;
 
             const titleEl = document.createElement('div');
             titleEl.className = 'slide-thumb-title';
@@ -675,26 +689,32 @@
             item.appendChild(preview);
             item.appendChild(num);
             item.appendChild(titleEl);
-            item.addEventListener('click', () => { Reveal.slide(index); updateActive(); });
+            item.addEventListener('click', () => { Reveal.slide(h, v); updateActive(); });
             thumbList.appendChild(item);
           });
         }
 
         function buildOutline() {
           outlineList.innerHTML = '';
-          const slides = document.querySelectorAll('.reveal .slides > section');
-          const current = Reveal.getState().indexh;
+          const allSlides = getAllSlides();
+          const state = Reveal.getState();
 
-          slides.forEach((slide, index) => {
-            const h = slide.querySelector('h1, h2, h3');
-            const title = h ? h.textContent.trim() : `Slide ${index + 1}`;
+          allSlides.forEach((slideInfo, index) => {
+            const { el: slide, h, v, isVertical } = slideInfo;
+            const isActive = state.indexh === h && state.indexv === v;
+
+            const heading = slide.querySelector('h1, h2, h3');
+            const title = heading ? heading.textContent.trim() : `Slide ${index + 1}`;
 
             const item = document.createElement('div');
-            item.className = 'slide-outline-item' + (index === current ? ' active' : '');
+            item.className = 'slide-outline-item' + (isActive ? ' active' : '');
+            item.dataset.h = h;
+            item.dataset.v = v;
+            if (isVertical) item.style.paddingLeft = '32px';
 
             const num = document.createElement('span');
             num.className = 'slide-outline-num';
-            num.textContent = index + 1;
+            num.textContent = isVertical ? `${h + 1}.${v + 1}` : `${index + 1}`;
 
             const titleEl = document.createElement('span');
             titleEl.className = 'slide-outline-title';
@@ -702,20 +722,22 @@
 
             item.appendChild(num);
             item.appendChild(titleEl);
-            item.addEventListener('click', () => { Reveal.slide(index); updateActive(); });
+            item.addEventListener('click', () => { Reveal.slide(h, v); updateActive(); });
             outlineList.appendChild(item);
           });
         }
 
         function updateActive() {
-          const current = Reveal.getState().indexh;
-          thumbList.querySelectorAll('.slide-thumb-item').forEach((el, i) => {
-            el.classList.toggle('active', i === current);
-            if (i === current) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          const state = Reveal.getState();
+          thumbList.querySelectorAll('.slide-thumb-item').forEach(el => {
+            const isActive = parseInt(el.dataset.h) === state.indexh && parseInt(el.dataset.v) === state.indexv;
+            el.classList.toggle('active', isActive);
+            if (isActive) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           });
-          outlineList.querySelectorAll('.slide-outline-item').forEach((el, i) => {
-            el.classList.toggle('active', i === current);
-            if (i === current) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          outlineList.querySelectorAll('.slide-outline-item').forEach(el => {
+            const isActive = parseInt(el.dataset.h) === state.indexh && parseInt(el.dataset.v) === state.indexv;
+            el.classList.toggle('active', isActive);
+            if (isActive) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           });
         }
 
