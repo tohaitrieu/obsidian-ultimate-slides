@@ -49,13 +49,13 @@ Browse and insert from layout, data, content, and Mermaid diagram templates:
 
 ## Installation
 
-### From Community Plugins (Coming Soon)
+### From Community Plugins
 
 1. Open Obsidian Settings → Community Plugins
 2. Search for "Ultimate Slides"
 3. Install and enable
 
-### Manual Installation
+### Manual Installation (BRAT)
 
 1. Download the latest release from [Releases](https://github.com/tohaitrieu/obsidian-ultimate-slides/releases)
 2. Extract to `.obsidian/plugins/ultimate-slides/`
