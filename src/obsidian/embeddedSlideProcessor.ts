@@ -1,4 +1,4 @@
-import { load } from "js-yaml";
+import { parse as load } from "yaml";
 import type { EmbeddedSlideParameters } from "../@types";
 import type { UltimateSlidesPlugin } from "../ultimateSlides-Plugin";
 

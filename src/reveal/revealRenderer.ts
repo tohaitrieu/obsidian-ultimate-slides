@@ -1,7 +1,16 @@
+import { existsSync, readdirSync } from "node:fs";
+import { access, readFile } from "node:fs/promises";
 import path, { basename, extname, join } from "node:path";
 
-import { exists, existsSync, readFile } from "fs-extra";
-import { glob } from "glob";
+async function exists(path: string): Promise<boolean> {
+    try {
+        await access(path);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 import Mustache from "mustache";
 import type { Options, QueryString } from "../@types";
 import type { MarkdownProcessor } from "../obsidian/markdownProcessor";
@@ -207,14 +216,20 @@ export class RevealRenderer {
                 return this.toExternalPath(directPath);
             }
 
-            // Basename glob match (existing behavior for short names like "black")
-            const files = glob.sync("*.css", { cwd: dir });
-            const key = basename(name).replace(extname(name), "");
-            const match = files.find(
-                (f) => basename(f).replace(extname(f), "") === key,
-            );
-            if (match) {
-                return this.toExternalPath(path.join(dir, match));
+            // Basename match (existing behavior for short names like "black")
+            try {
+                const files = readdirSync(dir).filter((f) =>
+                    f.endsWith(".css"),
+                );
+                const key = basename(name).replace(extname(name), "");
+                const match = files.find(
+                    (f) => basename(f).replace(extname(f), "") === key,
+                );
+                if (match) {
+                    return this.toExternalPath(path.join(dir, match));
+                }
+            } catch {
+                // Directory doesn't exist, continue
             }
         }
         return name;

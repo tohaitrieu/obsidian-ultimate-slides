@@ -1,12 +1,22 @@
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import {
-    copy,
-    emptyDir,
-    existsSync,
-    outputFileSync,
-    writeFile,
-} from "fs-extra";
 import { Platform } from "obsidian";
+
+async function emptyDir(dir: string): Promise<void> {
+    await rm(dir, { recursive: true, force: true });
+    await mkdir(dir, { recursive: true });
+}
+
+async function copy(src: string, dest: string): Promise<void> {
+    await cp(src, dest, { recursive: true });
+}
+
+function outputFileSync(filePath: string, data: Buffer): void {
+    mkdirSync(path.dirname(filePath), { recursive: true });
+    writeFileSync(filePath, data);
+}
+
 import type { ObsidianUtils } from "../obsidian/obsidianUtils";
 
 export class RevealExporter {
