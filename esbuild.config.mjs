@@ -157,11 +157,32 @@ const parameters = {
         }),
         copy({
             assets: {
-                from: [
-                    'node_modules/reveal.js/plugin/**/*',
-                ],
-                to: ['./plugin/'],
-                keepStructure: true
+                from: ['node_modules/reveal.js/plugin/highlight/**/*'],
+                to: ['./plugin/highlight/'],
+            }
+        }),
+        copy({
+            assets: {
+                from: ['node_modules/reveal.js/plugin/markdown/**/*'],
+                to: ['./plugin/markdown/'],
+            }
+        }),
+        copy({
+            assets: {
+                from: ['node_modules/reveal.js/plugin/notes/**/*'],
+                to: ['./plugin/notes/'],
+            }
+        }),
+        copy({
+            assets: {
+                from: ['node_modules/reveal.js/plugin/search/**/*'],
+                to: ['./plugin/search/'],
+            }
+        }),
+        copy({
+            assets: {
+                from: ['node_modules/reveal.js/plugin/zoom/**/*'],
+                to: ['./plugin/zoom/'],
             }
         }),
         copy({
