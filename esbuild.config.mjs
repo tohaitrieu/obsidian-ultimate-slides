@@ -212,6 +212,12 @@ const parameters = {
         }),
         copy({
             assets: {
+                from: ['src/plugin/math/math-static.js'],
+                to: ['./plugin/math/'],
+            }
+        }),
+        copy({
+            assets: {
                 from: ['node_modules/reveal.js-menu/*'],
                 to: ['./plugin/menu/'],
             }

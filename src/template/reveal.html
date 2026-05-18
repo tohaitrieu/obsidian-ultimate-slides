@@ -331,7 +331,15 @@
     <script src="{{{base}}}plugin/highlight/highlight.js"></script>
 
     <script src="{{{base}}}plugin/zoom/zoom.js"></script>
-    <script src="{{{base}}}plugin/math/math.js"></script>
+    {{#isKaTeX}}
+    <link rel="stylesheet" href="{{{base}}}plugin/math/katex/dist/katex.min.css">
+    <script src="{{{base}}}plugin/math/katex/dist/katex.min.js"></script>
+    <script src="{{{base}}}plugin/math/katex/dist/contrib/auto-render.min.js"></script>
+    {{/isKaTeX}}
+    {{#isMathJax}}
+    <script src="{{{base}}}plugin/math/mathjax/tex-chtml.js"></script>
+    {{/isMathJax}}
+    <script src="{{{base}}}plugin/math/math-static.js"></script>
     <script src="{{{base}}}plugin/mermaid/mermaid.js"></script>
     <script src="{{{base}}}plugin/chart/chart.umd.js"></script>
     <script src="{{{base}}}plugin/chart/plugin.js"></script>
