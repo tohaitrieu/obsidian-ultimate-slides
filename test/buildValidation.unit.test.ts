@@ -42,7 +42,7 @@ describe("Build Validation", () => {
     describe("Critical Build Files", () => {
         const criticalFiles = [
             "dist/reveal.js",
-            "plugin/math/math.js",
+            "plugin/math/math-static.js",
             "plugin/math/mathjax/tex-chtml.js",
             "plugin/load-mathjax.js",
             "plugin/math/katex/dist/katex.min.js",
