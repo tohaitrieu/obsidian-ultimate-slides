@@ -730,6 +730,7 @@
             reveal.style.marginLeft = '';
             reveal.style.width = '';
           }
+          Reveal.layout();
         }
 
         // Expose globally for customcontrols
@@ -746,7 +747,7 @@
           }
         });
 
-        // Drag resize
+        // Drag resize with debounced rebuild
         let isResizing = false;
         panelResize.addEventListener('mousedown', () => {
           isResizing = true;
@@ -762,11 +763,14 @@
             if (panel.classList.contains('open')) {
               reveal.style.marginLeft = w + 'px';
               reveal.style.width = `calc(100% - ${w}px)`;
-              buildThumbnails(); // Rebuild with new width
             }
           }
         });
         document.addEventListener('mouseup', () => {
+          if (isResizing && panel.classList.contains('open')) {
+            buildThumbnails();
+            Reveal.layout();
+          }
           isResizing = false;
           document.body.style.cursor = '';
           document.body.style.userSelect = '';
