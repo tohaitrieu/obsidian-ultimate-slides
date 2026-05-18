@@ -1,6 +1,6 @@
 {
     "name": "ultimate-slides",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "description": "Create markdown-based presentations with reveal.js and 24+ built-in slide templates",
     "author": "To Trieu (forked from Slides Extended)",
     "license": "MIT",
