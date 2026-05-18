@@ -116,6 +116,7 @@ jobs:
           ${{ env.ZIP_ARTIFACT }}
           ./main.js
           ./styles.css
+          ./manifest.json
 
     # Create the release on github
     - name: Create Release

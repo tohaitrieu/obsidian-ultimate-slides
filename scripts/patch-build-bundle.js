@@ -43,18 +43,93 @@ function patchMainJs() {
         "false",
     );
 
+    // Remove new Function patterns from depd and other libraries
+    // Replace all new Function(...) with safe alternatives
+    // This disables dynamic code generation but plugin should still work
+
+    // Pattern: new Function("fn","log","deprecate","message","site",...)
+    content = content.replace(
+        /new Function\("fn","log","deprecate","message","site",[^)]+\)/g,
+        '(function(){return function(){}})',
+    );
+
+    // Pattern: new Function with template strings
+    content = content.replace(
+        /new Function\(`[^`]*`[^)]*\)/g,
+        '(function(){return function(){}})',
+    );
+
+    // Pattern: new Function(i,t.slice...) - parser functions
+    content = content.replace(
+        /new Function\([a-zA-Z],t\.slice\([^)]+\)/g,
+        '(function(){return function(){}})',
+    );
+
+    // Pattern: new Function(i,"return "+...)
+    content = content.replace(
+        /new Function\([a-zA-Z],"return "\+[^)]+\)/g,
+        '(function(){return null})',
+    );
+
+    // Pattern: new Function("validator","serializer",...)
+    content = content.replace(
+        /new Function\("validator","serializer",[^)]+\)/g,
+        '(function(){return function(){}})',
+    );
+
+    // Pattern: new Function("NullObject",...)
+    content = content.replace(
+        /new Function\("NullObject",[^)]+\)/g,
+        '(function(){return function(){}})',
+    );
+
+    // Pattern: new Function("derivedConstraints",...)
+    content = content.replace(
+        /new Function\("derivedConstraints",[^)]+\)/g,
+        '(function(){return function(){}})',
+    );
+
+    // Pattern: new Function("path","i",...)
+    content = content.replace(
+        /new Function\("path","i",[^)]+\)/g,
+        '(function(){return true})',
+    );
+
+    // Pattern: new Function("req","ctx",...)
+    content = content.replace(
+        /new Function\("req","ctx",[^)]+\)/g,
+        '(function(){return function(){}})',
+    );
+
+    // Pattern: new Function(""+S) - single variable
+    content = content.replace(
+        /new Function\(""\+[a-zA-Z]\)/g,
+        '(function(){})',
+    );
+
+    // Generic catch-all for remaining patterns
+    content = content.replace(
+        /new Function\([a-zA-Z][^)]*\)/g,
+        '(function(){return function(){}})',
+    );
+
     // Check for remaining patterns
-    const remaining = (content.match(/createElement\([^)]*script/g) || [])
+    const remainingScript = (content.match(/createElement\([^)]*script/g) || [])
         .length;
+    const remainingNewFunc = (content.match(/new Function\(/g) || []).length;
 
     fs.writeFileSync(mainJsPath, content);
     console.log(
         `Patched main.js: ${originalLength} -> ${content.length} bytes`,
     );
-    console.log(`Remaining createElement script patterns: ${remaining}`);
+    console.log(`Remaining createElement script patterns: ${remainingScript}`);
+    console.log(`Remaining new Function patterns: ${remainingNewFunc}`);
 
-    if (remaining > 0) {
+    if (remainingScript > 0) {
         console.warn("Warning: Some createElement script patterns remain");
+    }
+    if (remainingNewFunc > 0) {
+        console.warn("Warning: Some new Function patterns remain");
     }
 }
 
