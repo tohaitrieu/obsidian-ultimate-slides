@@ -196,6 +196,15 @@
         .slide-panel-toggle {
             display: none;
         }
+        /* Align customcontrols with navigation controls */
+        #customcontrols {
+            left: var(--r-controls-spacing, 12px) !important;
+            bottom: var(--r-controls-spacing, 12px) !important;
+        }
+        #customcontrols > ul {
+            left: var(--r-controls-spacing, 12px) !important;
+            bottom: 48px !important;
+        }
     </style>
     <link rel="stylesheet" href="{{{base}}}{{{themeUrl}}}" id="theme" />
     <link rel="stylesheet" href="{{{base}}}{{{highlightThemeUrl}}}" />
