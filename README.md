@@ -16,11 +16,18 @@ Create beautiful markdown-based presentations with [reveal.js](https://revealjs.
 
 ## What's New in Ultimate Slides
 
+- **Navigator Panel** - Sidebar with thumbnail previews and outline view (press `N`)
 - **Template Inserter** - Command palette (`Cmd/Ctrl+P` → "Insert slide template") with visual preview
 - **Markdown Layout Directives** - Use `columns-2`, `columns-3`, `timeline`, `grid-2x2` for easy layouts
 - **Fixed Mermaid Rendering** - Diagrams now render at full size
 - **Bundled Assets** - No external downloads required
 - **Simplified Setup** - Works out of the box
+
+### Navigator Panel
+
+Resizable sidebar with thumbnail previews and outline navigation. Press `N` or click the ☰ button:
+
+![Navigator Panel](imgs/presenting-with-sidebar-thumbnail-navigation.png)
 
 ### Template Inserter
 
@@ -50,7 +57,7 @@ Browse and insert from layout, data, content, and Mermaid diagram templates:
 
 ### Manual Installation
 
-1. Download the latest release from [Releases](https://github.com/totrieu/obsidian-ultimate-slides/releases)
+1. Download the latest release from [Releases](https://github.com/tohaitrieu/obsidian-ultimate-slides/releases)
 2. Extract to `.obsidian/plugins/ultimate-slides/`
 3. Restart Obsidian and enable the plugin
 
