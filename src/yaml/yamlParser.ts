@@ -1,8 +1,8 @@
-import { loadFront } from "yaml-front-matter";
+import { parse as parseYaml } from "yaml";
 
 import type { Options, SlidesExtendedSettings } from "../@types";
 import { DEFAULTS } from "../ultimateSlides-constants";
-import { isEmpty, isNil, omit, omitBy, pick } from "../util";
+import { isEmpty, isNil, omitBy, pick } from "../util";
 
 export class YamlParser {
     private settings: SlidesExtendedSettings;
@@ -142,10 +142,24 @@ export class YamlParser {
         markdown: string;
     } {
         try {
-            const document = loadFront(input.replace(/^\uFEFF/, ""));
+            const content = input.replace(/^\uFEFF/, "");
+            const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
+            const match = content.match(frontmatterRegex);
+
+            if (!match) {
+                return {
+                    yamlOptions: {},
+                    markdown: content,
+                };
+            }
+
+            const yamlContent = match[1];
+            const markdown = match[2];
+            const yamlOptions = parseYaml(yamlContent) || {};
+
             return {
-                yamlOptions: omit(document, ["__content"]),
-                markdown: document.__content || input,
+                yamlOptions,
+                markdown,
             };
         } catch (_error) {
             return {
